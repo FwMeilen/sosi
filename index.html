@@ -48,6 +48,8 @@
     outline:none;
   }
   input[type=text]:focus{border-color:var(--rot)}
+  .mailin{flex:1;min-width:0;font-size:16px;padding:13px 14px;border:2px solid var(--linie);border-radius:12px;outline:none}
+  .mailin:focus{border-color:var(--rot)}
 
   .btn{appearance:none;border:0;cursor:pointer;font-weight:700;font-size:16px;
        padding:14px 18px;border-radius:12px;width:100%;background:var(--rot);color:#fff}
@@ -89,7 +91,7 @@
   <div class="head-in">
     <span class="marke"></span>
     <div>
-      <div class="head-t">Prüfung Sondersignal</div>
+      <div class="head-t">MWD Team</div>
       <div class="head-s">Stützpunktfeuerwehr Meilen</div>
     </div>
   </div>
@@ -105,16 +107,31 @@
 
   <!-- LOGIN -->
   <section id="scLogin" class="karte">
-    <h1>Anmeldung</h1>
-    <p class="lead">Gib dein dreistelliges Kürzel ein, um die Prüfung zu starten.</p>
+    <h1>Test Sondersignal</h1>
+    <p class="lead"><br>Willkommen zum Test Sondersignal.<br> Der Test besteht aus 10 Fragen, die alle richtig beantwortet sein müssen um zu bestehen. Pro Frage ist nur eine einzige Antwort richtig.<br>Zeit: 15min<br><br> Bitte gib Dein Kürzel ein um den Test zu starten.</p>
     <label for="kuerzel">Kürzel</label>
     <input id="kuerzel" type="text" maxlength="3" inputmode="text" autocomplete="off"
            spellcheck="false" placeholder="ABC">
     <div class="reihe">
       <button class="btn" id="btnStart">Prüfung starten</button>
     </div>
-    <div class="hinw">10 Fragen · 15 Minuten · alle müssen richtig sein</div>
     <div class="fehler" id="loginFehler"></div>
+  </section>
+
+  <!-- GÜLTIGE PRÜFUNG -->
+  <section id="scGueltig" class="karte" style="display:none">
+    <h1>Gültige Prüfung vorhanden</h1>
+    <p class="lead" id="gueltigText"></p>
+    <div class="reihe">
+      <button class="btn" id="btnVerlaengern">Prüfung frühzeitig verlängern</button>
+    </div>
+    <div class="reihe">
+      <button class="btn sek" id="btnKopie">Kopie der Bestätigung herunterladen</button>
+    </div>
+    <div class="reihe">
+      <button class="btn sek" id="btnGueltigZurueck">Zurück zur Anmeldung</button>
+    </div>
+    <div class="fehler" id="gueltigFehler"></div>
   </section>
 
   <!-- QUIZ -->
@@ -142,7 +159,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.02 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.04 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -154,7 +171,7 @@ const EXEC_URL = "https://script.google.com/macros/s/AKfycbz0mGY8B8I__4UV8HoMT6J
 let S = { token:null, fragen:[], antworten:[], idx:0, dauerSek:900, endeMs:0, timer:null };
 
 const $ = id => document.getElementById(id);
-function zeige(sc){ ["scLogin","scQuiz","scResultat"].forEach(x=>$(x).style.display="none"); $(sc).style.display="block"; }
+function zeige(sc){ ["scLogin","scGueltig","scQuiz","scResultat"].forEach(x=>$(x).style.display="none"); $(sc).style.display="block"; }
 
 async function api(payload){
   const res = await fetch(EXEC_URL, { method:"POST", body: JSON.stringify(payload) }); // text/plain -> kein Preflight
@@ -163,26 +180,38 @@ async function api(payload){
 
 // ======== LOGIN ========
 $("kuerzel").addEventListener("input", e=>{ e.target.value = e.target.value.toUpperCase().replace(/[^A-ZÄÖÜ]/g,"").slice(0,3); });
-$("kuerzel").addEventListener("keydown", e=>{ if(e.key==="Enter") starten(); });
-$("btnStart").addEventListener("click", starten);
+$("kuerzel").addEventListener("keydown", e=>{ if(e.key==="Enter") pruefeUser(); });
+$("btnStart").addEventListener("click", pruefeUser);
+$("btnVerlaengern").addEventListener("click", ()=> startFlow(true, $("btnVerlaengern"), gueltigFehler));
+$("btnKopie").addEventListener("click", kopieHerunterladen);
+$("btnGueltigZurueck").addEventListener("click", ()=>{ $("gueltigFehler").style.display="none"; zeige("scLogin"); $("kuerzel").focus(); });
+
+let aktuellesKuerzel = "";
 
 function loginFehler(t){ const f=$("loginFehler"); f.textContent=t; f.style.display="block"; }
+function gueltigFehler(t){ const f=$("gueltigFehler"); f.textContent=t; f.style.display="block"; }
 
-async function starten(){
+async function pruefeUser(){
   const k = $("kuerzel").value.trim();
   $("loginFehler").style.display="none";
   if(k.length!==3){ loginFehler("Bitte ein dreistelliges Kürzel eingeben."); return; }
   if(EXEC_URL.indexOf("HIER_EXEC")===0){ loginFehler("EXEC_URL ist noch nicht gesetzt (Apps-Script-URL fehlt)."); return; }
+  aktuellesKuerzel = k;
+  await startFlow(false, $("btnStart"), loginFehler);
+}
 
-  $("btnStart").disabled=true; $("btnStart").textContent="Starte …";
+async function startFlow(verlaengern, btn, fehlerFn){
+  const orig = btn.textContent;
+  btn.disabled=true; btn.textContent="Prüfe User …";
   try{
-    const r = await api({ action:"start", kuerzel:k });
+    const r = await api({ action:"start", kuerzel:aktuellesKuerzel, verlaengern:verlaengern });
     if(!r.ok){
-      if(r.error==="KUERZEL_UNBEKANNT") loginFehler("Kürzel nicht gefunden. Bitte prüfen.");
-      else if(r.error==="KUERZEL_FORMAT") loginFehler("Kürzel muss genau drei Zeichen haben.");
-      else if(r.error==="COOLDOWN") loginFehler("Noch gesperrt. Bitte in "+mmss(r.restSek)+" erneut versuchen.");
-      else if(r.error==="POOL_LEER"||r.error==="POOL_ZU_KLEIN") loginFehler("Es sind noch nicht genügend Fragen hinterlegt.");
-      else loginFehler("Fehler: "+(r.error||"unbekannt"));
+      if(r.error==="GUELTIG"){ zeigeGueltig(r); return; }
+      else if(r.error==="KUERZEL_UNBEKANNT") fehlerFn("User nicht erkannt. Bitte bei LOL / MWD Team melden.");
+      else if(r.error==="KUERZEL_FORMAT") fehlerFn("Kürzel muss genau drei Zeichen haben.");
+      else if(r.error==="COOLDOWN") fehlerFn("User noch gesperrt. Bitte in "+mmss(r.restSek)+" erneut versuchen.");
+      else if(r.error==="POOL_LEER"||r.error==="POOL_ZU_KLEIN") fehlerFn("Es sind noch nicht genügend Fragen hinterlegt.");
+      else fehlerFn("Fehler: "+(r.error||"unbekannt"));
       return;
     }
     S.token=r.token; S.fragen=r.fragen; S.dauerSek=r.dauerSek||900;
@@ -191,10 +220,30 @@ async function starten(){
     zeige("scQuiz"); $("tbar").style.display="flex"; $("balkenWrap").style.display="block";
     rendere();
   }catch(err){
-    loginFehler("Verbindung fehlgeschlagen. Internet/URL prüfen.");
+    fehlerFn("Verbindung fehlgeschlagen. Internet/URL prüfen.");
   }finally{
-    $("btnStart").disabled=false; $("btnStart").textContent="Prüfung starten";
+    btn.disabled=false; btn.textContent=orig;
   }
+}
+
+function zeigeGueltig(r){
+  $("gueltigText").innerHTML = "Du hast eine gültige Prüfung vom <b>"+r.vom+"</b>, die noch bis am <b>"+r.bis+"</b> gültig ist.";
+  $("gueltigFehler").style.display="none";
+  $("btnKopie").style.display = r.hatPdf ? "block" : "none";
+  zeige("scGueltig");
+}
+
+async function kopieHerunterladen(){
+  const btn=$("btnKopie"); const orig=btn.textContent;
+  btn.disabled=true; btn.textContent="Lade PDF …"; $("gueltigFehler").style.display="none";
+  try{
+    const r = await api({ action:"pdfkopie", kuerzel:aktuellesKuerzel });
+    if(!r.ok || !r.pdfBase64){ gueltigFehler(r.error==="KEINE_KOPIE" ? "Keine hinterlegte Kopie gefunden." : "Konnte das PDF nicht laden."); return; }
+    const blob=b64ToBlob(r.pdfBase64,"application/pdf");
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=r.pdfName||"Bestaetigung.pdf"; a.click();
+  }catch(e){ gueltigFehler("Konnte das PDF nicht laden."); }
+  finally{ btn.disabled=false; btn.textContent=orig; }
 }
 
 // ======== TIMER ========
@@ -267,11 +316,12 @@ function resultat(r, zeitAbgelaufen){
   if(r.ok && r.result==="BESTANDEN"){
     $("siegel").className="siegel ok"; $("siegel").textContent="✓";
     $("rtitel").textContent="Bestanden";
-    $("rtext").textContent=r.name+" ist für Fahrten mit Sondersignal freigegeben – bis "+r.gueltigBis+".";
+    $("rtext").textContent=r.name+" ist für Fahrten mit Sondersignal freigegeben. Gültig bis "+r.gueltigBis+".";
     meta.innerHTML = feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
     pdfAktion(akt, r);
     const wohin = r.personEmail ? "an dich und die Feuerwehr" : "an die Feuerwehr (keine persönliche E-Mail hinterlegt)";
     akt.insertAdjacentHTML("beforeend", '<div class="hinw">PDF wurde abgelegt und '+wohin+' versendet.</div>');
+    if(!r.personEmail){ mailFormular(akt); }
   } else if(r.result==="ZEIT" || zeitAbgelaufen){
     $("siegel").className="siegel no"; $("siegel").textContent="⏱";
     $("rtitel").textContent="Zeitlimit überschritten";
@@ -310,9 +360,36 @@ function pdfAktion(akt, r){
   });
 }
 
+function mailFormular(akt){
+  akt.insertAdjacentHTML("beforeend",
+    '<div class="reihe" style="margin-top:6px">'
+    + '<input id="mailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.ch" class="mailin">'
+    + '<button class="btn sek" id="btnMailSend" style="flex:0 0 42%">Per Mail senden</button>'
+    + '</div>'
+    + '<div class="hinw" id="mailHinw">Optional: Bestätigung an eine E-Mail-Adresse senden.</div>');
+  $("btnMailSend").addEventListener("click", mailSenden);
+  $("mailInput").addEventListener("keydown", e=>{ if(e.key==="Enter") mailSenden(); });
+}
+
+async function mailSenden(){
+  const email=($("mailInput").value||"").trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $("mailHinw").textContent="Bitte eine gültige E-Mail eingeben."; return; }
+  const btn=$("btnMailSend"); const orig=btn.textContent;
+  btn.disabled=true; btn.textContent="Sende …";
+  try{
+    const r=await api({ action:"mailkopie", kuerzel:aktuellesKuerzel, email:email });
+    if(r.ok){ $("mailHinw").textContent="An "+email+" gesendet."; btn.textContent="Gesendet"; $("mailInput").disabled=true; }
+    else{
+      $("mailHinw").textContent = r.error==="EMAIL_UNGUELTIG" ? "Bitte eine gültige E-Mail eingeben."
+        : (r.error==="KEINE_KOPIE" ? "Keine hinterlegte Bestätigung gefunden." : "Senden fehlgeschlagen.");
+      btn.disabled=false; btn.textContent=orig;
+    }
+  }catch(e){ $("mailHinw").textContent="Senden fehlgeschlagen."; btn.disabled=false; btn.textContent=orig; }
+}
+
 $("btnNeu").addEventListener("click", ()=>{
   S={ token:null, fragen:[], antworten:[], idx:0, dauerSek:900, endeMs:0, timer:null };
-  gesendet=false; $("kuerzel").value=""; $("loginFehler").style.display="none";
+  gesendet=false; aktuellesKuerzel=""; $("kuerzel").value=""; $("loginFehler").style.display="none";
   zeige("scLogin"); $("kuerzel").focus();
 });
 

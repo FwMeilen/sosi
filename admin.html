@@ -71,6 +71,7 @@
   .qcard{border:1px solid var(--linie);border-radius:12px;padding:14px;margin-bottom:12px}
   .qhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
   .qtitel{font-weight:700}
+  .qid{font-size:12px;color:var(--grau);font-weight:700;letter-spacing:.3px}
   .qa{font-size:14px;margin:3px 0;color:#333}
   .qa.ok{color:var(--ok);font-weight:600}
   .qedit label{margin-top:8px}
@@ -140,7 +141,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.10 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.12 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -268,7 +269,8 @@ function qcardHtml(q,idx){
   let ans="";
   opts.forEach((o,i)=>{ if(String(o).trim()) ans+='<div class="qa'+((i+1)===korr?' ok':'')+'">'+(i+1)+'. '+escHtml(o)+((i+1)===korr?' ✓':'')+'</div>'; });
   return '<div class="qcard" id="qcard'+idx+'">'
-    + '<div class="qhead"><div class="qtitel">'+escHtml(q.frage)+'</div>'
+    + '<div class="qhead"><div><div class="qid">ID '+escHtml(q.id)+'</div>'
+    + '<div class="qtitel">'+escHtml(q.frage)+'</div></div>'
     + '<button class="btn sek klein" id="editBtn'+idx+'">✎ Bearbeiten</button></div>'
     + ans + '</div>';
 }
@@ -279,6 +281,7 @@ function editFrage(idx){
   for(let i=1;i<=4;i++) sel+='<option value="'+i+'"'+(i===korr?' selected':'')+'>Antwort '+i+'</option>';
   $("qcard"+idx).innerHTML =
     '<div class="qedit">'
+    + '<div class="qid" style="margin-bottom:10px">ID '+escHtml(q.id)+' · nicht editierbar</div>'
     + '<label>Frage</label><textarea id="ef'+idx+'" rows="2">'+escHtml(q.frage)+'</textarea>'
     + '<label>Antwort 1</label><input id="ea1'+idx+'" type="text" value="'+escHtml(q.a1)+'">'
     + '<label>Antwort 2</label><input id="ea2'+idx+'" type="text" value="'+escHtml(q.a2)+'">'

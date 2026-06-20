@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · SoSi-Prüfung · MWD Stützpunktfeuerwehr Meilen</title>
+<style>
+  :root{
+    --rot:#c8102e; --rot-dunkel:#8f0b20; --tinte:#16191d; --grau:#5b636b;
+    --linie:#e2e5e8; --hell:#f5f6f7; --ok:#1c7c3c; --zeit:#e08b1e; --flaeche:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+       color:var(--tinte);background:var(--hell);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 16px 48px}
+
+  header{background:var(--tinte);color:#fff}
+  .head-in{max-width:820px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .marke{width:10px;height:28px;background:var(--rot);border-radius:2px;flex:0 0 auto}
+  .head-t{font-weight:800;font-size:15px}
+  .head-s{font-size:11px;color:#aeb4ba;text-transform:uppercase;letter-spacing:1px}
+
+  .karte{background:var(--flaeche);border:1px solid var(--linie);border-radius:14px;
+         padding:22px;margin-top:20px;box-shadow:0 1px 2px rgba(16,25,33,.04)}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:16px;margin:0 0 12px}
+  .lead{color:var(--grau);margin:0 0 18px}
+
+  label{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
+  input[type=password],input[type=text]{width:100%;font-size:16px;padding:12px 14px;
+    border:2px solid var(--linie);border-radius:10px;outline:none}
+  input:focus{border-color:var(--rot)}
+  textarea{width:100%;font-size:15px;padding:10px 12px;border:2px solid var(--linie);
+    border-radius:10px;outline:none;font-family:inherit;resize:vertical}
+  textarea:focus{border-color:var(--rot)}
+  select{font-size:15px;padding:10px 12px;border:2px solid var(--linie);border-radius:10px;outline:none}
+
+  .btn{appearance:none;border:0;cursor:pointer;font-weight:700;font-size:15px;padding:12px 18px;
+       border-radius:10px;background:var(--rot);color:#fff}
+  .btn:hover{background:var(--rot-dunkel)}
+  .btn:disabled{background:#c7ccd1;cursor:not-allowed}
+  .btn.sek{background:var(--flaeche);color:var(--tinte);border:1px solid var(--linie)}
+  .btn.sek:hover{background:var(--hell)}
+  .btn.klein{font-size:13px;padding:8px 12px}
+
+  .fehler{background:#fff1f2;border:1px solid #f5c2c7;color:#8f0b20;border-radius:10px;
+          padding:10px 14px;margin-top:12px;font-size:14px;display:none}
+  .hinw{color:var(--grau);font-size:13px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+  .tab{appearance:none;border:1px solid var(--linie);background:var(--flaeche);color:var(--tinte);
+       font-weight:700;font-size:14px;padding:10px 16px;border-radius:999px;cursor:pointer}
+  .tab.aktiv{background:var(--tinte);color:#fff;border-color:var(--tinte)}
+
+  /* Statistik */
+  .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .kpi{flex:1;min-width:120px;border:1px solid var(--linie);border-radius:12px;padding:12px 14px}
+  .kpi .z{font-size:26px;font-weight:800}
+  .kpi .l{font-size:12px;color:var(--grau)}
+  .statgrid{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .legende div{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0}
+  .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .toprow{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--linie);font-size:14px}
+  .toprow:last-child{border-bottom:0}
+  .topnum{flex:0 0 64px;color:var(--grau);font-variant-numeric:tabular-nums}
+  .topnum b{color:var(--rot)}
+
+  /* Fragen */
+  .qcard{border:1px solid var(--linie);border-radius:12px;padding:14px;margin-bottom:12px}
+  .qhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .qtitel{font-weight:700}
+  .qa{font-size:14px;margin:3px 0;color:#333}
+  .qa.ok{color:var(--ok);font-weight:600}
+  .qedit label{margin-top:8px}
+  .qedit input{margin-bottom:6px}
+
+  /* PDF */
+  .pdfrow{display:flex;justify-content:space-between;align-items:center;gap:10px;
+          border:1px solid var(--linie);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+  .pdfrow .meta{font-size:14px}
+  .pdfrow .meta small{color:var(--grau)}
+
+  .foot{margin-top:26px;color:#9aa1a8;font-size:11px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <span class="marke"></span>
+    <div>
+      <div class="head-t">Admin · Prüfung Sondersignal</div>
+      <div class="head-s">MWD Stützpunktfeuerwehr Meilen</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <section id="scLogin" class="karte">
+    <h1>Admin-Anmeldung</h1>
+    <p class="lead">Bitte Passwort eingeben.</p>
+    <label for="pass">Passwort</label>
+    <input id="pass" type="password" autocomplete="off">
+    <div style="margin-top:14px"><button class="btn" id="btnLogin">Anmelden</button></div>
+    <div class="fehler" id="loginFehler"></div>
+  </section>
+
+  <!-- PANEL -->
+  <section id="scPanel" style="display:none">
+    <div class="tabs">
+      <button class="tab aktiv" data-tab="stat">Statistik</button>
+      <button class="tab" data-tab="fragen">Fragen</button>
+      <button class="tab" data-tab="pdf">PDF-Suche</button>
+    </div>
+
+    <!-- STATISTIK -->
+    <div id="tabStat" class="karte">
+      <h2>Statistik</h2>
+      <div id="statInhalt" class="hinw">Lade …</div>
+    </div>
+
+    <!-- FRAGEN -->
+    <div id="tabFragen" class="karte" style="display:none">
+      <h2>Fragen bearbeiten</h2>
+      <div id="fragenInhalt" class="hinw">Lade …</div>
+    </div>
+
+    <!-- PDF -->
+    <div id="tabPdf" class="karte" style="display:none">
+      <h2>PDF suchen</h2>
+      <label for="suche">Kürzel oder Name</label>
+      <div style="display:flex;gap:10px">
+        <input id="suche" type="text" placeholder="z. B. LOL oder Loepfe">
+        <button class="btn" id="btnSuche" style="flex:0 0 auto;white-space:nowrap">Suchen</button>
+      </div>
+      <div id="pdfInhalt" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <div class="foot">CLv0.10 · © Stützpunktfeuerwehr Meilen / LOL</div>
+</div>
+
+<script>
+const EXEC_URL = "https://script.google.com/macros/s/AKfycbz0mGY8B8I__4UV8HoMT6Jih-Aw_m_YIWvSyzpR8PP1avfnDZRtDTNU8ufKtPSrTg8sNg/exec";
+
+let PASS = "";
+let FRAGEN = [];
+const $ = id => document.getElementById(id);
+
+async function api(payload){
+  const res = await fetch(EXEC_URL, { method:"POST", body: JSON.stringify(payload) });
+  return await res.json();
+}
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+// ======== LOGIN ========
+$("btnLogin").addEventListener("click", login);
+$("pass").addEventListener("keydown", e=>{ if(e.key==="Enter") login(); });
+
+async function login(){
+  const p = $("pass").value;
+  $("loginFehler").style.display="none";
+  if(!p){ return; }
+  $("btnLogin").disabled=true; $("btnLogin").textContent="Prüfe …";
+  try{
+    const r = await api({ action:"adminLogin", pass:p });
+    if(r.ok){
+      PASS = p;
+      $("scLogin").style.display="none";
+      $("scPanel").style.display="block";
+      ladeStatistik();
+    } else {
+      const f=$("loginFehler"); f.textContent="Falsches Passwort."; f.style.display="block";
+    }
+  }catch(e){
+    const f=$("loginFehler"); f.textContent="Verbindung fehlgeschlagen."; f.style.display="block";
+  }finally{
+    $("btnLogin").disabled=false; $("btnLogin").textContent="Anmelden";
+  }
+}
+
+// ======== TABS ========
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("aktiv"));
+    t.classList.add("aktiv");
+    const tab=t.dataset.tab;
+    $("tabStat").style.display = tab==="stat"?"block":"none";
+    $("tabFragen").style.display = tab==="fragen"?"block":"none";
+    $("tabPdf").style.display = tab==="pdf"?"block":"none";
+    if(tab==="stat") ladeStatistik();
+    if(tab==="fragen") ladeFragen();
+  });
+});
+
+// ======== STATISTIK ========
+async function ladeStatistik(){
+  $("statInhalt").innerHTML='<div class="hinw">Lade …</div>';
+  const r = await api({ action:"adminStats", pass:PASS });
+  if(!r.ok){ $("statInhalt").innerHTML='<div class="fehler" style="display:block">Fehler beim Laden.</div>'; return; }
+  const nicht = r.neinPunkte + r.neinZeit;
+  const seg = [
+    {label:"Bestanden", value:r.ja, color:"var(--ok)"},
+    {label:"Nicht bestanden (Punkte)", value:r.neinPunkte, color:"var(--rot)"},
+    {label:"Zeitlimit", value:r.neinZeit, color:"var(--zeit)"}
+  ];
+  let html =
+    '<div class="kpis">'
+    + kpi(r.total,"Tests gesamt") + kpi(r.ja,"Bestanden")
+    + kpi(r.neinPunkte,"Nicht bestanden (Punkte)") + kpi(r.neinZeit,"Zeitlimit")
+    + '</div>'
+    + '<div class="statgrid">' + pieSVG(seg) + '<div class="legende">' + legende(seg) + '</div></div>';
+
+  html += '<h2 style="margin-top:22px">Top 5 – häufigste Fehler</h2>';
+  if(!r.top5 || !r.top5.length){
+    html += '<div class="hinw">Noch keine Fehlerdaten.</div>';
+  } else {
+    r.top5.forEach((it,i)=>{
+      html += '<div class="toprow"><span class="topnum"><b>'+it.falsch+'✗</b> / '+it.richtig+'✓</span>'
+            + '<span>'+(i+1)+'. '+escHtml(it.frage)+'</span></div>';
+    });
+  }
+  $("statInhalt").innerHTML = html;
+}
+function kpi(z,l){ return '<div class="kpi"><div class="z">'+z+'</div><div class="l">'+l+'</div></div>'; }
+function legende(seg){
+  return seg.map(s=>'<div><span class="dot" style="background:'+s.color+'"></span>'+s.label+' · <b>'+s.value+'</b></div>').join("");
+}
+function pieSVG(data){
+  const total = data.reduce((a,b)=>a+b.value,0);
+  if(total===0) return '<div class="hinw" style="width:180px">Noch keine Daten.</div>';
+  const cx=90,cy=90,r=80; let ang=-Math.PI/2; let p="";
+  data.forEach(d=>{
+    if(d.value<=0) return;
+    if(d.value===total){ p+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+d.color+'"/>'; return; }
+    const a2=ang+(d.value/total)*2*Math.PI;
+    const x1=cx+r*Math.cos(ang), y1=cy+r*Math.sin(ang);
+    const x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+    const large=(a2-ang)>Math.PI?1:0;
+    p+='<path d="M'+cx+','+cy+' L'+x1.toFixed(2)+','+y1.toFixed(2)+' A'+r+','+r+' 0 '+large+' 1 '+x2.toFixed(2)+','+y2.toFixed(2)+' Z" fill="'+d.color+'"/>';
+    ang=a2;
+  });
+  return '<svg viewBox="0 0 180 180" width="180" height="180" style="flex:0 0 auto">'+p+'</svg>';
+}
+
+// ======== FRAGEN ========
+async function ladeFragen(){
+  $("fragenInhalt").innerHTML='<div class="hinw">Lade …</div>';
+  const r = await api({ action:"adminFragen", pass:PASS });
+  if(!r.ok){ $("fragenInhalt").innerHTML='<div class="fehler" style="display:block">Fehler beim Laden.</div>'; return; }
+  FRAGEN = r.fragen;
+  renderFragen();
+}
+function renderFragen(){
+  const box=$("fragenInhalt");
+  if(!FRAGEN.length){ box.innerHTML='<div class="hinw">Keine Fragen gefunden.</div>'; return; }
+  box.innerHTML = FRAGEN.map((q,idx)=>qcardHtml(q,idx)).join("");
+  FRAGEN.forEach((q,idx)=>{
+    const b=$("editBtn"+idx); if(b) b.addEventListener("click", ()=>editFrage(idx));
+  });
+}
+function qcardHtml(q,idx){
+  const opts=[q.a1,q.a2,q.a3,q.a4];
+  const korr=parseInt(q.korrekt,10);
+  let ans="";
+  opts.forEach((o,i)=>{ if(String(o).trim()) ans+='<div class="qa'+((i+1)===korr?' ok':'')+'">'+(i+1)+'. '+escHtml(o)+((i+1)===korr?' ✓':'')+'</div>'; });
+  return '<div class="qcard" id="qcard'+idx+'">'
+    + '<div class="qhead"><div class="qtitel">'+escHtml(q.frage)+'</div>'
+    + '<button class="btn sek klein" id="editBtn'+idx+'">✎ Bearbeiten</button></div>'
+    + ans + '</div>';
+}
+function editFrage(idx){
+  const q=FRAGEN[idx];
+  const korr=parseInt(q.korrekt,10)||1;
+  let sel='';
+  for(let i=1;i<=4;i++) sel+='<option value="'+i+'"'+(i===korr?' selected':'')+'>Antwort '+i+'</option>';
+  $("qcard"+idx).innerHTML =
+    '<div class="qedit">'
+    + '<label>Frage</label><textarea id="ef'+idx+'" rows="2">'+escHtml(q.frage)+'</textarea>'
+    + '<label>Antwort 1</label><input id="ea1'+idx+'" type="text" value="'+escHtml(q.a1)+'">'
+    + '<label>Antwort 2</label><input id="ea2'+idx+'" type="text" value="'+escHtml(q.a2)+'">'
+    + '<label>Antwort 3</label><input id="ea3'+idx+'" type="text" value="'+escHtml(q.a3)+'">'
+    + '<label>Antwort 4 (optional)</label><input id="ea4'+idx+'" type="text" value="'+escHtml(q.a4)+'">'
+    + '<label>Korrekte Antwort</label><select id="ek'+idx+'">'+sel+'</select>'
+    + '<div style="margin-top:12px;display:flex;gap:10px">'
+    + '<button class="btn klein" id="saveBtn'+idx+'">Speichern</button>'
+    + '<button class="btn sek klein" id="cancelBtn'+idx+'">Abbrechen</button>'
+    + '</div><div class="fehler" id="editFehler'+idx+'"></div></div>';
+  $("saveBtn"+idx).addEventListener("click", ()=>speichereFrage(idx));
+  $("cancelBtn"+idx).addEventListener("click", ()=>{ $("qcard"+idx).outerHTML=qcardHtml(q,idx); $("editBtn"+idx).addEventListener("click", ()=>editFrage(idx)); });
+}
+async function speichereFrage(idx){
+  const q=FRAGEN[idx];
+  const payload={
+    action:"adminUpdateFrage", pass:PASS, rowNr:q.rowNr,
+    frage:$("ef"+idx).value, a1:$("ea1"+idx).value, a2:$("ea2"+idx).value,
+    a3:$("ea3"+idx).value, a4:$("ea4"+idx).value, korrekt:$("ek"+idx).value
+  };
+  const btn=$("saveBtn"+idx); btn.disabled=true; btn.textContent="Speichere …";
+  const r=await api(payload);
+  if(r.ok){
+    Object.assign(q,{frage:payload.frage,a1:payload.a1,a2:payload.a2,a3:payload.a3,a4:payload.a4,korrekt:String(payload.korrekt)});
+    $("qcard"+idx).outerHTML=qcardHtml(q,idx);
+    $("editBtn"+idx).addEventListener("click", ()=>editFrage(idx));
+  } else {
+    const f=$("editFehler"+idx); f.textContent="Speichern fehlgeschlagen."; f.style.display="block";
+    btn.disabled=false; btn.textContent="Speichern";
+  }
+}
+
+// ======== PDF-SUCHE ========
+$("btnSuche").addEventListener("click", suchePdf);
+$("suche").addEventListener("keydown", e=>{ if(e.key==="Enter") suchePdf(); });
+
+async function suchePdf(){
+  const q=$("suche").value.trim();
+  const box=$("pdfInhalt");
+  if(!q){ box.innerHTML=""; return; }
+  box.innerHTML='<div class="hinw">Suche …</div>';
+  const r=await api({ action:"adminSuchePdf", pass:PASS, query:q });
+  if(!r.ok){ box.innerHTML='<div class="fehler" style="display:block">Fehler bei der Suche.</div>'; return; }
+  if(!r.treffer.length){ box.innerHTML='<div class="hinw">Keine Treffer.</div>'; return; }
+  box.innerHTML = r.treffer.map((t,i)=>
+    '<div class="pdfrow"><div class="meta"><b>'+escHtml(t.vorname+' '+t.name)+'</b> ('+escHtml(t.kuerzel)+')<br>'
+    + '<small>'+escHtml(t.datum)+'</small></div>'
+    + (t.fileId ? '<button class="btn sek klein" id="dl'+i+'">PDF herunterladen</button>' : '<span class="hinw">kein PDF</span>')
+    + '</div>').join("");
+  r.treffer.forEach((t,i)=>{ if(t.fileId){ const b=$("dl"+i); if(b) b.addEventListener("click", ()=>ladePdf(t.fileId, b)); } });
+}
+async function ladePdf(fileId, btn){
+  const orig=btn.textContent; btn.disabled=true; btn.textContent="Lade …";
+  try{
+    const r=await api({ action:"adminPdf", pass:PASS, fileId:fileId });
+    if(r.ok && r.pdfBase64){
+      const bin=atob(r.pdfBase64); const buf=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+      const url=URL.createObjectURL(new Blob([buf],{type:"application/pdf"}));
+      const a=document.createElement("a"); a.href=url; a.download=r.pdfName||"Bestaetigung.pdf"; a.click();
+      btn.textContent="Heruntergeladen";
+    } else { btn.textContent="Fehler"; btn.disabled=false; }
+  }catch(e){ btn.textContent="Fehler"; btn.disabled=false; }
+  finally{ if(btn.textContent==="Lade …"){ btn.textContent=orig; btn.disabled=false; } }
+}
+</script>
+</body>
+</html>

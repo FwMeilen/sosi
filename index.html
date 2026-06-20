@@ -85,6 +85,12 @@
   .meta div{font-size:14px}
   .meta b{display:block;font-size:20px}
   .foot{margin-top:26px;color:#9aa1a8;font-size:11px;text-align:center}
+  .rev{margin-top:16px;border-top:1px solid var(--linie);padding-top:8px}
+  .revrow{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--linie);font-size:14px}
+  .revrow:last-child{border-bottom:0}
+  .revmk{flex:0 0 18px;font-weight:800;text-align:center}
+  .revmk.ok{color:var(--ok)} .revmk.no{color:var(--rot)}
+  .revtxt{flex:1}
   a.klar{color:var(--rot);font-weight:600;text-decoration:none}
 </style>
 </head>
@@ -164,7 +170,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.05 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.07 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -207,7 +213,7 @@ async function pruefeUser(){
 
 async function startFlow(verlaengern, btn, fehlerFn){
   const orig = btn.textContent;
-  btn.disabled=true; btn.textContent="Prüfe User …";
+  btn.disabled=true; btn.textContent = verlaengern ? "Bereite Prüfung vor …" : "Prüfe User …";
   try{
     const r = await api({ action:"start", kuerzel:aktuellesKuerzel, verlaengern:verlaengern });
     if(!r.ok){
@@ -322,7 +328,11 @@ function resultat(r, zeitAbgelaufen){
   if(r.ok && r.result==="BESTANDEN"){
     $("siegel").className="siegel ok"; $("siegel").textContent="✓";
     $("rtitel").textContent="Bestanden";
-    $("rtext").textContent=r.name+" ist für Fahrten mit Sondersignal freigegeben. Gültig bis "+r.gueltigBis+".";
+    $("rtext").innerHTML=
+      "Gratuliere, "+escHtml(r.vorname||r.name)+"!<br><br>"
+      +"Du bist nun bis <b>"+r.gueltigBis+"</b> für Sondersignalfahrten freigegeben.<br><br>"
+      +"Das Resultat wird dem Kdo weitergeleitet und in den nächsten Tagen ins Lodur eingetragen.<br><br>"
+      +"Das MWD Team";
     meta.innerHTML = feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
     pdfAktion(akt, r);
     if(!r.personEmail){ mailFormular(akt); }
@@ -331,11 +341,13 @@ function resultat(r, zeitAbgelaufen){
     $("rtitel").textContent="Zeitlimit überschritten";
     $("rtext").innerHTML="Die 15 Minuten sind abgelaufen.<br>Neuer Versuch in 5 Minuten möglich.";
     if(r.dauer) meta.innerHTML=feld("Dauer",r.dauer);
+    reviewListe(akt, r.review);
   } else if(r.result==="PUNKTE"){
     $("siegel").className="siegel no"; $("siegel").textContent="✗";
     $("rtitel").textContent="Nicht bestanden";
     $("rtext").innerHTML="Es waren nicht alle Antworten richtig.<br>Neuer Versuch in 5 Minuten möglich.";
     meta.innerHTML=feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
+    reviewListe(akt, r.review);
   } else if(r.result==="SESSION"){
     $("siegel").className="siegel no"; $("siegel").textContent="!";
     $("rtitel").textContent="Sitzung abgelaufen";
@@ -348,6 +360,17 @@ function resultat(r, zeitAbgelaufen){
 }
 
 function feld(k,v){ return '<div>'+k+'<b>'+(v||"–")+'</b></div>'; }
+
+function reviewListe(akt, review){
+  if(!review || !review.length) return;
+  let html='<div class="rev">';
+  review.forEach((it,i)=>{
+    html += '<div class="revrow"><span class="revmk '+(it.richtig?"ok":"no")+'">'+(it.richtig?"✓":"✗")+'</span>'
+          + '<span class="revtxt">Frage '+(i+1)+': '+escHtml(it.frage)+'</span></div>';
+  });
+  html += '</div>';
+  akt.innerHTML = html;
+}
 
 function pdfAktion(akt, r){
   if(!r.pdfBase64) return;
@@ -364,8 +387,7 @@ function pdfAktion(akt, r){
 
 function mailFormular(akt){
   akt.insertAdjacentHTML("beforeend",
-    '<div class="reihe"><input id="mailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.ch" class="mailin"></div>'
-    + '<div class="reihe"><button class="btn sek" id="btnMailSend">PDF per Mail senden</button></div>'
+    '<div class="reihe"><input id="mailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.ch" class="mailin"><button class="btn sek" id="btnMailSend" style="flex:0 0 auto;width:auto;white-space:nowrap">PDF per Mail senden</button></div>'
     + '<div class="hinw" id="mailHinw" style="display:none"></div>');
   $("btnMailSend").addEventListener("click", mailSenden);
   $("mailInput").addEventListener("keydown", e=>{ if(e.key==="Enter") mailSenden(); });

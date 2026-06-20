@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>SoSi-Prüfung · Sondersignal · Stützpunktfeuerwehr Meilen</title>
+<style>
+  :root{
+    --rot:#c8102e; --rot-dunkel:#8f0b20; --tinte:#16191d; --grau:#5b636b;
+    --linie:#e2e5e8; --hell:#f5f6f7; --ok:#1c7c3c; --flaeche:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--tinte); background:var(--hell); line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:0 16px 48px}
+
+  /* Kopf */
+  header{background:var(--tinte);color:#fff}
+  .head-in{max-width:680px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .marke{width:10px;height:28px;background:var(--rot);border-radius:2px;flex:0 0 auto}
+  .head-t{font-weight:800;letter-spacing:.2px;font-size:15px}
+  .head-s{font-size:11px;color:#aeb4ba;text-transform:uppercase;letter-spacing:1px}
+
+  /* Timerleiste */
+  .tbar{position:sticky;top:0;z-index:10;background:var(--flaeche);border-bottom:1px solid var(--linie);
+        display:none;align-items:center;justify-content:space-between;padding:10px 16px}
+  .tbar .pos{font-size:13px;color:var(--grau);font-weight:600}
+  .uhr{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;
+       background:var(--hell);border:1px solid var(--linie);border-radius:999px;padding:4px 14px}
+  .uhr.warn{background:#fff1f2;border-color:var(--rot);color:var(--rot)}
+  .balken{height:4px;background:var(--linie)}
+  .balken > i{display:block;height:100%;background:var(--rot);width:100%;transition:width .9s linear}
+
+  /* Karten / Inhalte */
+  .karte{background:var(--flaeche);border:1px solid var(--linie);border-radius:14px;
+         padding:22px;margin-top:20px;box-shadow:0 1px 2px rgba(16,25,33,.04)}
+  h1{font-size:22px;margin:0 0 4px}
+  .lead{color:var(--grau);margin:0 0 18px}
+
+  label{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
+  input[type=text]{
+    width:100%;font-size:30px;font-weight:800;letter-spacing:.35em;text-align:center;
+    text-transform:uppercase;padding:14px 10px;border:2px solid var(--linie);border-radius:12px;
+    outline:none;
+  }
+  input[type=text]:focus{border-color:var(--rot)}
+
+  .btn{appearance:none;border:0;cursor:pointer;font-weight:700;font-size:16px;
+       padding:14px 18px;border-radius:12px;width:100%;background:var(--rot);color:#fff}
+  .btn:hover{background:var(--rot-dunkel)}
+  .btn:disabled{background:#c7ccd1;cursor:not-allowed}
+  .btn.sek{background:var(--flaeche);color:var(--tinte);border:1px solid var(--linie)}
+  .btn.sek:hover{background:var(--hell)}
+  .btn.sek:disabled{color:#aeb4ba}
+  .reihe{display:flex;gap:10px;margin-top:16px}
+
+  .frage{font-size:19px;font-weight:700;margin:2px 0 16px}
+  .opt{display:block;width:100%;text-align:left;background:var(--flaeche);border:2px solid var(--linie);
+       border-radius:12px;padding:14px 16px;margin:0 0 10px;font-size:16px;cursor:pointer}
+  .opt:hover{border-color:#c2c8ce}
+  .opt.sel{border-color:var(--rot);background:#fff5f6}
+  .opt .mk{display:inline-block;width:22px;height:22px;border-radius:50%;border:2px solid #c2c8ce;
+           margin-right:10px;vertical-align:-5px}
+  .opt.sel .mk{border-color:var(--rot);background:var(--rot);box-shadow:inset 0 0 0 3px #fff}
+
+  .hinw{font-size:13px;color:var(--grau);margin-top:10px;text-align:center}
+  .fehler{background:#fff1f2;border:1px solid #f5c2c7;color:#8f0b20;border-radius:10px;
+          padding:12px 14px;margin-top:14px;font-size:14px;display:none}
+
+  /* Resultat */
+  .rkopf{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .siegel{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+          font-size:24px;color:#fff;flex:0 0 auto}
+  .siegel.ok{background:var(--ok)} .siegel.no{background:var(--rot)}
+  .rtitel{font-size:22px;font-weight:800}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0 4px}
+  .meta div{font-size:14px}
+  .meta b{display:block;font-size:20px}
+  .foot{margin-top:26px;color:#9aa1a8;font-size:11px;text-align:center}
+  a.klar{color:var(--rot);font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <span class="marke"></span>
+    <div>
+      <div class="head-t">Prüfung Sondersignal</div>
+      <div class="head-s">Stützpunktfeuerwehr Meilen</div>
+    </div>
+  </div>
+</header>
+
+<div class="tbar" id="tbar">
+  <span class="pos" id="pos">Frage 1/10</span>
+  <span class="uhr" id="uhr">15:00</span>
+</div>
+<div class="balken" id="balkenWrap" style="display:none"><i id="balken"></i></div>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <section id="scLogin" class="karte">
+    <h1>Anmeldung</h1>
+    <p class="lead">Gib dein dreistelliges Kürzel ein, um die Prüfung zu starten.</p>
+    <label for="kuerzel">Kürzel</label>
+    <input id="kuerzel" type="text" maxlength="3" inputmode="text" autocomplete="off"
+           spellcheck="false" placeholder="ABC">
+    <div class="reihe">
+      <button class="btn" id="btnStart">Prüfung starten</button>
+    </div>
+    <div class="hinw">10 Fragen · 15 Minuten · alle müssen richtig sein</div>
+    <div class="fehler" id="loginFehler"></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="scQuiz" class="karte" style="display:none">
+    <div class="frage" id="frageTxt"></div>
+    <div id="optionen"></div>
+    <div class="reihe">
+      <button class="btn sek" id="btnZurueck" style="flex:0 0 40%">Zurück</button>
+      <button class="btn" id="btnWeiter">Weiter</button>
+    </div>
+    <div class="hinw" id="quizHinw"></div>
+  </section>
+
+  <!-- RESULTAT -->
+  <section id="scResultat" class="karte" style="display:none">
+    <div class="rkopf">
+      <div class="siegel" id="siegel"></div>
+      <div class="rtitel" id="rtitel"></div>
+    </div>
+    <p class="lead" id="rtext" style="margin-bottom:0"></p>
+    <div class="meta" id="rmeta"></div>
+    <div id="rAktion"></div>
+    <div class="reihe">
+      <button class="btn sek" id="btnNeu">Zur Anmeldung</button>
+    </div>
+  </section>
+
+  <div class="foot">CLv0.01 · © Stützpunktfeuerwehr Meilen / LOL</div>
+</div>
+
+<script>
+// ======== KONFIGURATION ========
+// Nach dem Deployment der Apps-Script-Web-App hier die /exec-URL eintragen:
+const EXEC_URL = "https://script.google.com/macros/s/AKfycbz0mGY8B8I__4UV8HoMT6Jih-Aw_m_YIWvSyzpR8PP1avfnDZRtDTNU8ufKtPSrTg8sNg/exec";
+
+// ======== ZUSTAND ========
+let S = { token:null, fragen:[], antworten:[], idx:0, dauerSek:900, endeMs:0, timer:null };
+
+const $ = id => document.getElementById(id);
+function zeige(sc){ ["scLogin","scQuiz","scResultat"].forEach(x=>$(x).style.display="none"); $(sc).style.display="block"; }
+
+async function api(payload){
+  const res = await fetch(EXEC_URL, { method:"POST", body: JSON.stringify(payload) }); // text/plain -> kein Preflight
+  return await res.json();
+}
+
+// ======== LOGIN ========
+$("kuerzel").addEventListener("input", e=>{ e.target.value = e.target.value.toUpperCase().replace(/[^A-ZÄÖÜ]/g,"").slice(0,3); });
+$("kuerzel").addEventListener("keydown", e=>{ if(e.key==="Enter") starten(); });
+$("btnStart").addEventListener("click", starten);
+
+function loginFehler(t){ const f=$("loginFehler"); f.textContent=t; f.style.display="block"; }
+
+async function starten(){
+  const k = $("kuerzel").value.trim();
+  $("loginFehler").style.display="none";
+  if(k.length!==3){ loginFehler("Bitte ein dreistelliges Kürzel eingeben."); return; }
+  if(EXEC_URL.indexOf("HIER_EXEC")===0){ loginFehler("EXEC_URL ist noch nicht gesetzt (Apps-Script-URL fehlt)."); return; }
+
+  $("btnStart").disabled=true; $("btnStart").textContent="Starte …";
+  try{
+    const r = await api({ action:"start", kuerzel:k });
+    if(!r.ok){
+      if(r.error==="KUERZEL_UNBEKANNT") loginFehler("Kürzel nicht gefunden. Bitte prüfen.");
+      else if(r.error==="KUERZEL_FORMAT") loginFehler("Kürzel muss genau drei Zeichen haben.");
+      else if(r.error==="COOLDOWN") loginFehler("Noch gesperrt. Bitte in "+mmss(r.restSek)+" erneut versuchen.");
+      else if(r.error==="POOL_LEER"||r.error==="POOL_ZU_KLEIN") loginFehler("Es sind noch nicht genügend Fragen hinterlegt.");
+      else loginFehler("Fehler: "+(r.error||"unbekannt"));
+      return;
+    }
+    S.token=r.token; S.fragen=r.fragen; S.dauerSek=r.dauerSek||900;
+    S.antworten=new Array(S.fragen.length).fill(-1); S.idx=0;
+    starteTimer();
+    zeige("scQuiz"); $("tbar").style.display="flex"; $("balkenWrap").style.display="block";
+    rendere();
+  }catch(err){
+    loginFehler("Verbindung fehlgeschlagen. Internet/URL prüfen.");
+  }finally{
+    $("btnStart").disabled=false; $("btnStart").textContent="Prüfung starten";
+  }
+}
+
+// ======== TIMER ========
+function starteTimer(){
+  S.endeMs = Date.now() + S.dauerSek*1000;
+  tick();
+  S.timer = setInterval(tick, 250);
+}
+function tick(){
+  const rest = Math.max(0, Math.round((S.endeMs - Date.now())/1000));
+  $("uhr").textContent = mmss(rest);
+  $("uhr").classList.toggle("warn", rest<=120);
+  $("balken").style.width = (S.dauerSek? (rest/S.dauerSek*100):0)+"%";
+  if(rest<=0){ stoppTimer(); abschliessen(true); }
+}
+function stoppTimer(){ if(S.timer){ clearInterval(S.timer); S.timer=null; } }
+
+// ======== QUIZ ========
+$("btnWeiter").addEventListener("click", ()=>{
+  if(S.idx < S.fragen.length-1){ S.idx++; rendere(); }
+  else { abschliessen(false); }
+});
+$("btnZurueck").addEventListener("click", ()=>{ if(S.idx>0){ S.idx--; rendere(); } });
+
+function rendere(){
+  const f = S.fragen[S.idx];
+  $("pos").textContent = "Frage "+(S.idx+1)+"/"+S.fragen.length;
+  $("frageTxt").textContent = f.frage;
+  const box = $("optionen"); box.innerHTML="";
+  f.options.forEach((opt,i)=>{
+    const b=document.createElement("button");
+    b.className="opt"+(S.antworten[S.idx]===i?" sel":"");
+    b.innerHTML='<span class="mk"></span>'+escHtml(opt);
+    b.addEventListener("click", ()=>{ S.antworten[S.idx]=i; rendere(); });
+    box.appendChild(b);
+  });
+  $("btnZurueck").disabled = (S.idx===0);
+  const letzte = (S.idx===S.fragen.length-1);
+  $("btnWeiter").textContent = letzte ? "Prüfung abschliessen" : "Weiter";
+  const offen = S.antworten.filter(a=>a<0).length;
+  if(letzte){
+    $("btnWeiter").disabled = (offen>0);
+    $("quizHinw").textContent = offen>0 ? (offen+" Frage(n) noch offen") : "Bereit zum Abschliessen";
+  } else {
+    $("btnWeiter").disabled = false;
+    $("quizHinw").textContent = "";
+  }
+}
+
+let gesendet=false;
+async function abschliessen(zeitAbgelaufen){
+  if(gesendet) return; gesendet=true;
+  stoppTimer();
+  zeige("scResultat");
+  $("siegel").className="siegel"; $("siegel").textContent="…";
+  $("rtitel").textContent="Auswertung läuft …"; $("rtext").textContent=""; $("rmeta").innerHTML=""; $("rAktion").innerHTML="";
+  try{
+    const r = await api({ action:"submit", token:S.token, kuerzel:$("kuerzel").value.trim(), antworten:S.antworten });
+    resultat(r, zeitAbgelaufen);
+  }catch(err){
+    $("siegel").classList.add("no"); $("siegel").textContent="!";
+    $("rtitel").textContent="Senden fehlgeschlagen";
+    $("rtext").textContent="Die Antworten konnten nicht übermittelt werden. Bitte erneut anmelden.";
+  }
+}
+
+function resultat(r, zeitAbgelaufen){
+  $("tbar").style.display="none"; $("balkenWrap").style.display="none";
+  const meta=$("rmeta"); const akt=$("rAktion");
+  if(r.ok && r.result==="BESTANDEN"){
+    $("siegel").className="siegel ok"; $("siegel").textContent="✓";
+    $("rtitel").textContent="Bestanden";
+    $("rtext").textContent=r.name+" ist für Fahrten mit Sondersignal freigegeben – bis "+r.gueltigBis+".";
+    meta.innerHTML = feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
+    pdfAktion(akt, r);
+    const wohin = r.personEmail ? "an dich und die Feuerwehr" : "an die Feuerwehr (keine persönliche E-Mail hinterlegt)";
+    akt.insertAdjacentHTML("beforeend", '<div class="hinw">PDF wurde abgelegt und '+wohin+' versendet.</div>');
+  } else if(r.result==="ZEIT" || zeitAbgelaufen){
+    $("siegel").className="siegel no"; $("siegel").textContent="⏱";
+    $("rtitel").textContent="Zeitlimit überschritten";
+    $("rtext").textContent="Die 15 Minuten sind abgelaufen. Kein Zertifikat. Neuer Versuch in 5 Minuten möglich.";
+    if(r.dauer) meta.innerHTML=feld("Dauer",r.dauer);
+  } else if(r.result==="PUNKTE"){
+    $("siegel").className="siegel no"; $("siegel").textContent="✗";
+    $("rtitel").textContent="Nicht bestanden";
+    $("rtext").textContent="Es waren nicht alle Antworten richtig. Kein Zertifikat. Neuer Versuch in 5 Minuten möglich.";
+    meta.innerHTML=feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
+  } else if(r.result==="SESSION"){
+    $("siegel").className="siegel no"; $("siegel").textContent="!";
+    $("rtitel").textContent="Sitzung abgelaufen";
+    $("rtext").textContent="Bitte neu anmelden und die Prüfung erneut starten.";
+  } else {
+    $("siegel").className="siegel no"; $("siegel").textContent="!";
+    $("rtitel").textContent="Fehler";
+    $("rtext").textContent="Unerwartete Antwort: "+(r.error||r.result||"unbekannt");
+  }
+}
+
+function feld(k,v){ return '<div>'+k+'<b>'+(v||"–")+'</b></div>'; }
+
+function pdfAktion(akt, r){
+  if(!r.pdfBase64) return;
+  const blob = b64ToBlob(r.pdfBase64, "application/pdf");
+  const url = URL.createObjectURL(blob);
+  akt.innerHTML =
+    '<div class="reihe">'
+    + '<button class="btn" id="btnPdfOpen">PDF öffnen / drucken</button>'
+    + '<button class="btn sek" id="btnPdfDl" style="flex:0 0 40%">Speichern</button>'
+    + '</div>';
+  $("btnPdfOpen").addEventListener("click", ()=> window.open(url, "_blank"));
+  $("btnPdfDl").addEventListener("click", ()=>{
+    const a=document.createElement("a"); a.href=url; a.download=r.pdfName||"Zertifikat.pdf"; a.click();
+  });
+}
+
+$("btnNeu").addEventListener("click", ()=>{
+  S={ token:null, fragen:[], antworten:[], idx:0, dauerSek:900, endeMs:0, timer:null };
+  gesendet=false; $("kuerzel").value=""; $("loginFehler").style.display="none";
+  zeige("scLogin"); $("kuerzel").focus();
+});
+
+// ======== HELFER ========
+function mmss(sek){ sek=Math.max(0,sek|0); const m=Math.floor(sek/60), s=sek%60;
+  return (m<10?"0":"")+m+":"+(s<10?"0":"")+s; }
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function b64ToBlob(b64, type){
+  const bin=atob(b64); const len=bin.length; const buf=new Uint8Array(len);
+  for(let i=0;i<len;i++) buf[i]=bin.charCodeAt(i);
+  return new Blob([buf], {type:type});
+}
+</script>
+</body>
+</html>

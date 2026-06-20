@@ -28,7 +28,7 @@
   /* Timerleiste */
   .tbar{position:sticky;top:0;z-index:10;background:var(--flaeche);border-bottom:1px solid var(--linie);
         display:none;align-items:center;justify-content:space-between;padding:10px 16px}
-  .tbar .pos{font-size:13px;color:var(--grau);font-weight:600}
+  .tbar .pos{font-size:20px;color:var(--tinte);font-weight:800;font-variant-numeric:tabular-nums}
   .uhr{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;
        background:var(--hell);border:1px solid var(--linie);border-radius:999px;padding:4px 14px}
   .uhr.warn{background:#fff1f2;border-color:var(--rot);color:var(--rot)}
@@ -138,11 +138,11 @@
     <div class="meta" id="rmeta"></div>
     <div id="rAktion"></div>
     <div class="reihe">
-      <button class="btn sek" id="btnNeu">Zur Anmeldung</button>
+      <button class="btn sek" id="btnNeu">Zur erneuten Anmeldung</button>
     </div>
   </section>
 
-  <div class="foot">CLv0.01 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.02 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -207,7 +207,6 @@ function tick(){
   const rest = Math.max(0, Math.round((S.endeMs - Date.now())/1000));
   $("uhr").textContent = mmss(rest);
   $("uhr").classList.toggle("warn", rest<=120);
-  $("balken").style.width = (S.dauerSek? (rest/S.dauerSek*100):0)+"%";
   if(rest<=0){ stoppTimer(); abschliessen(true); }
 }
 function stoppTimer(){ if(S.timer){ clearInterval(S.timer); S.timer=null; } }
@@ -222,6 +221,7 @@ $("btnZurueck").addEventListener("click", ()=>{ if(S.idx>0){ S.idx--; rendere();
 function rendere(){
   const f = S.fragen[S.idx];
   $("pos").textContent = "Frage "+(S.idx+1)+"/"+S.fragen.length;
+  $("balken").style.width = ((S.idx+1)/S.fragen.length*100)+"%";
   $("frageTxt").textContent = f.frage;
   const box = $("optionen"); box.innerHTML="";
   f.options.forEach((opt,i)=>{
@@ -275,12 +275,12 @@ function resultat(r, zeitAbgelaufen){
   } else if(r.result==="ZEIT" || zeitAbgelaufen){
     $("siegel").className="siegel no"; $("siegel").textContent="⏱";
     $("rtitel").textContent="Zeitlimit überschritten";
-    $("rtext").textContent="Die 15 Minuten sind abgelaufen. Kein Zertifikat. Neuer Versuch in 5 Minuten möglich.";
+    $("rtext").innerHTML="Die 15 Minuten sind abgelaufen.<br>Neuer Versuch in 5 Minuten möglich.";
     if(r.dauer) meta.innerHTML=feld("Dauer",r.dauer);
   } else if(r.result==="PUNKTE"){
     $("siegel").className="siegel no"; $("siegel").textContent="✗";
     $("rtitel").textContent="Nicht bestanden";
-    $("rtext").textContent="Es waren nicht alle Antworten richtig. Kein Zertifikat. Neuer Versuch in 5 Minuten möglich.";
+    $("rtext").innerHTML="Es waren nicht alle Antworten richtig.<br>Neuer Versuch in 5 Minuten möglich.";
     meta.innerHTML=feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
   } else if(r.result==="SESSION"){
     $("siegel").className="siegel no"; $("siegel").textContent="!";

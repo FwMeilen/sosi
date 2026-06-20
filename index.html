@@ -7,7 +7,7 @@
 <style>
   :root{
     --rot:#c8102e; --rot-dunkel:#8f0b20; --tinte:#16191d; --grau:#5b636b;
-    --linie:#e2e5e8; --hell:#f5f6f7; --ok:#1c7c3c; --flaeche:#ffffff;
+    --linie:#e2e5e8; --hell:#f5f6f7; --ok:#1c7c3c; --flaeche:#ffffff; --blau:#1769d1;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -34,6 +34,8 @@
   .uhr.warn{background:#fff1f2;border-color:var(--rot);color:var(--rot)}
   .balken{height:4px;background:var(--linie)}
   .balken > i{display:block;height:100%;background:var(--rot);width:100%;transition:width .9s linear}
+  .balken.blau{margin-bottom:1px}
+  .balken.blau > i{background:var(--blau);transition:width .3s linear}
 
   /* Karten / Inhalte */
   .karte{background:var(--flaeche);border:1px solid var(--linie);border-radius:14px;
@@ -101,7 +103,10 @@
   <span class="pos" id="pos">Frage 1/10</span>
   <span class="uhr" id="uhr">15:00</span>
 </div>
-<div class="balken" id="balkenWrap" style="display:none"><i id="balken"></i></div>
+<div id="balkenWrap" style="display:none">
+  <div class="balken blau"><i id="balkenZeit"></i></div>
+  <div class="balken"><i id="balken"></i></div>
+</div>
 
 <div class="wrap">
 
@@ -159,7 +164,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.04 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.05 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -256,6 +261,7 @@ function tick(){
   const rest = Math.max(0, Math.round((S.endeMs - Date.now())/1000));
   $("uhr").textContent = mmss(rest);
   $("uhr").classList.toggle("warn", rest<=120);
+  $("balkenZeit").style.width = (S.dauerSek? (rest/S.dauerSek*100):0)+"%";
   if(rest<=0){ stoppTimer(); abschliessen(true); }
 }
 function stoppTimer(){ if(S.timer){ clearInterval(S.timer); S.timer=null; } }
@@ -319,8 +325,6 @@ function resultat(r, zeitAbgelaufen){
     $("rtext").textContent=r.name+" ist für Fahrten mit Sondersignal freigegeben. Gültig bis "+r.gueltigBis+".";
     meta.innerHTML = feld("Ergebnis",r.punkte)+feld("Dauer",r.dauer);
     pdfAktion(akt, r);
-    const wohin = r.personEmail ? "an dich und die Feuerwehr" : "an die Feuerwehr (keine persönliche E-Mail hinterlegt)";
-    akt.insertAdjacentHTML("beforeend", '<div class="hinw">PDF wurde abgelegt und '+wohin+' versendet.</div>');
     if(!r.personEmail){ mailFormular(akt); }
   } else if(r.result==="ZEIT" || zeitAbgelaufen){
     $("siegel").className="siegel no"; $("siegel").textContent="⏱";
@@ -350,10 +354,8 @@ function pdfAktion(akt, r){
   const blob = b64ToBlob(r.pdfBase64, "application/pdf");
   const url = URL.createObjectURL(blob);
   akt.innerHTML =
-    '<div class="reihe">'
-    + '<button class="btn" id="btnPdfOpen">PDF öffnen / drucken</button>'
-    + '<button class="btn sek" id="btnPdfDl" style="flex:0 0 40%">Speichern</button>'
-    + '</div>';
+    '<div class="reihe"><button class="btn" id="btnPdfOpen">PDF öffnen</button></div>'
+    + '<div class="reihe"><button class="btn sek" id="btnPdfDl">PDF speichern</button></div>';
   $("btnPdfOpen").addEventListener("click", ()=> window.open(url, "_blank"));
   $("btnPdfDl").addEventListener("click", ()=>{
     const a=document.createElement("a"); a.href=url; a.download=r.pdfName||"Zertifikat.pdf"; a.click();
@@ -362,29 +364,29 @@ function pdfAktion(akt, r){
 
 function mailFormular(akt){
   akt.insertAdjacentHTML("beforeend",
-    '<div class="reihe" style="margin-top:6px">'
-    + '<input id="mailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.ch" class="mailin">'
-    + '<button class="btn sek" id="btnMailSend" style="flex:0 0 42%">Per Mail senden</button>'
-    + '</div>'
-    + '<div class="hinw" id="mailHinw">Optional: Bestätigung an eine E-Mail-Adresse senden.</div>');
+    '<div class="reihe"><input id="mailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.ch" class="mailin"></div>'
+    + '<div class="reihe"><button class="btn sek" id="btnMailSend">PDF per Mail senden</button></div>'
+    + '<div class="hinw" id="mailHinw" style="display:none"></div>');
   $("btnMailSend").addEventListener("click", mailSenden);
   $("mailInput").addEventListener("keydown", e=>{ if(e.key==="Enter") mailSenden(); });
 }
 
 async function mailSenden(){
   const email=($("mailInput").value||"").trim();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $("mailHinw").textContent="Bitte eine gültige E-Mail eingeben."; return; }
+  const hinw=$("mailHinw");
+  const zeige=t=>{ hinw.textContent=t; hinw.style.display="block"; };
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ zeige("Bitte eine gültige E-Mail eingeben."); return; }
   const btn=$("btnMailSend"); const orig=btn.textContent;
   btn.disabled=true; btn.textContent="Sende …";
   try{
     const r=await api({ action:"mailkopie", kuerzel:aktuellesKuerzel, email:email });
-    if(r.ok){ $("mailHinw").textContent="An "+email+" gesendet."; btn.textContent="Gesendet"; $("mailInput").disabled=true; }
+    if(r.ok){ zeige("An "+email+" gesendet."); btn.textContent="Gesendet"; $("mailInput").disabled=true; }
     else{
-      $("mailHinw").textContent = r.error==="EMAIL_UNGUELTIG" ? "Bitte eine gültige E-Mail eingeben."
-        : (r.error==="KEINE_KOPIE" ? "Keine hinterlegte Bestätigung gefunden." : "Senden fehlgeschlagen.");
+      zeige(r.error==="EMAIL_UNGUELTIG" ? "Bitte eine gültige E-Mail eingeben."
+        : (r.error==="KEINE_KOPIE" ? "Keine hinterlegte Bestätigung gefunden." : "Senden fehlgeschlagen."));
       btn.disabled=false; btn.textContent=orig;
     }
-  }catch(e){ $("mailHinw").textContent="Senden fehlgeschlagen."; btn.disabled=false; btn.textContent=orig; }
+  }catch(e){ zeige("Senden fehlgeschlagen."); btn.disabled=false; btn.textContent=orig; }
 }
 
 $("btnNeu").addEventListener("click", ()=>{

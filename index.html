@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SoSi-Prüfung · Sondersignal · Stützpunktfeuerwehr Meilen</title>
 <style>
   :root{
@@ -60,7 +60,7 @@
   .btn.sek{background:var(--flaeche);color:var(--tinte);border:1px solid var(--linie)}
   .btn.sek:hover{background:var(--hell)}
   .btn.sek:disabled{color:#aeb4ba}
-  .reihe{display:flex;gap:10px;margin-top:16px}
+  .reihe{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
 
   .frage{font-size:19px;font-weight:700;margin:2px 0 16px}
   .opt{display:block;width:100%;text-align:left;background:var(--flaeche);border:2px solid var(--linie);
@@ -119,9 +119,9 @@
   <!-- LOGIN -->
   <section id="scLogin" class="karte">
     <h1>Test Sondersignal</h1>
-    <p class="lead"><br>Willkommen zum Test Sondersignal.<br> Der Test besteht aus 10 Fragen, die alle richtig beantwortet sein müssen um zu bestehen. Pro Frage ist nur eine einzige Antwort richtig.<br>Zeit: 15min<br><br> Bitte gib Dein Kürzel ein um den Test zu starten.</p>
+    <p class="lead"><br>Willkommen zum Test Sondersignal.<br><br> Der Test besteht aus 10 Fragen, die alle richtig beantwortet sein müssen um zu bestehen. Pro Frage ist nur eine einzige Antwort richtig.<br><br>Zeit: 15min<br><br> Bitte gib Dein Kürzel ein um den Test zu starten.</p>
     <input id="kuerzel" type="text" maxlength="3" inputmode="text" autocomplete="off"
-           spellcheck="false" placeholder="ABC">
+           spellcheck="false">
     <div class="reihe">
       <button class="btn" id="btnStart">Prüfung starten</button>
     </div>
@@ -164,12 +164,12 @@
     <p class="lead" id="rtext" style="margin-bottom:0"></p>
     <div class="meta" id="rmeta"></div>
     <div id="rAktion"></div>
-    <div class="reihe">
+    <div class="reihe" id="reiheNeu">
       <button class="btn sek" id="btnNeu">Zur erneuten Anmeldung</button>
     </div>
   </section>
 
-  <div class="foot">CLv0.12 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.13 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -309,12 +309,14 @@ async function abschliessen(zeitAbgelaufen){
   if(gesendet) return; gesendet=true;
   stoppTimer();
   zeige("scResultat");
+  $("reiheNeu").style.display="none";
   $("siegel").className="siegel"; $("siegel").textContent="…";
   $("rtitel").textContent="Auswertung läuft …"; $("rtext").textContent=""; $("rmeta").innerHTML=""; $("rAktion").innerHTML="";
   try{
     const r = await api({ action:"submit", token:S.token, kuerzel:$("kuerzel").value.trim(), antworten:S.antworten });
     resultat(r, zeitAbgelaufen);
   }catch(err){
+    $("reiheNeu").style.display="";
     $("siegel").classList.add("no"); $("siegel").textContent="!";
     $("rtitel").textContent="Senden fehlgeschlagen";
     $("rtext").textContent="Die Antworten konnten nicht übermittelt werden. Bitte erneut anmelden.";
@@ -322,6 +324,7 @@ async function abschliessen(zeitAbgelaufen){
 }
 
 function resultat(r, zeitAbgelaufen){
+  $("reiheNeu").style.display="";
   $("tbar").style.display="none"; $("balkenWrap").style.display="none";
   const meta=$("rmeta"); const akt=$("rAktion");
   if(r.ok && r.result==="BESTANDEN"){

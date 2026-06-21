@@ -65,6 +65,11 @@
   .toprow{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--linie);font-size:14px}
   .toprow:last-child{border-bottom:0}
   .topnum{flex:0 0 64px;color:var(--grau);font-variant-numeric:tabular-nums}
+  .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:6px}
+  table.l5{border-collapse:collapse;width:100%;font-size:14px;min-width:480px}
+  table.l5 th,table.l5 td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--linie);white-space:nowrap}
+  table.l5 th{font-size:12px;color:var(--grau);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
   .topnum b{color:var(--rot)}
 
   /* Fragen */
@@ -134,14 +139,14 @@
       <h2>PDF suchen</h2>
       <label for="suche">Kürzel oder Name</label>
       <div style="display:flex;gap:10px">
-        <input id="suche" type="text" placeholder="z. B. LOL oder Loepfe">
+        <input id="suche" type="text" placeholder="z. B. LOL oder Loepfe" style="flex:1;min-width:0">
         <button class="btn" id="btnSuche" style="flex:0 0 auto;white-space:nowrap">Suchen</button>
       </div>
       <div id="pdfInhalt" style="margin-top:14px"></div>
     </div>
   </section>
 
-  <div class="foot">CLv0.12 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.13 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -224,9 +229,29 @@ async function ladeStatistik(){
             + '<span>'+(i+1)+'. '+escHtml(it.frage)+'</span></div>';
     });
   }
+  html += '<h2 style="margin-top:22px">Letzte 5 Prüfungen</h2>';
+  if(!r.letzte5 || !r.letzte5.length){
+    html += '<div class="hinw">Noch keine Prüfungen.</div>';
+  } else {
+    let rows='';
+    r.letzte5.forEach(p=>{
+      const res=resBadge(p.resultat);
+      rows += '<tr><td>'+escHtml(p.datum)+'</td><td>'+escHtml(p.zeit)+'</td><td>'+escHtml(p.kuerzel)
+            + '</td><td>'+escHtml(p.dauer)+'</td><td>'+res+'</td></tr>';
+    });
+    html += '<div class="tblwrap"><table class="l5"><thead><tr>'
+          + '<th>Datum</th><th>Zeit</th><th>Kürzel</th><th>Zeit gebraucht</th><th>Resultat</th>'
+          + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
   $("statInhalt").innerHTML = html;
 }
-function kpi(z,l){ return '<div class="kpi"><div class="z">'+z+'</div><div class="l">'+l+'</div></div>'; }
+function resBadge(b){
+  let txt='—', col='#9aa1a8';
+  if(b==='Ja'){ txt='Bestanden'; col='var(--ok)'; }
+  else if(b==='Nein: Punkte'){ txt='Punkte'; col='var(--rot)'; }
+  else if(b==='Nein: Zeit'){ txt='Zeitlimit'; col='var(--zeit)'; }
+  return '<span class="badge" style="background:'+col+'">'+txt+'</span>';
+}
 function legende(seg){
   return seg.map(s=>'<div><span class="dot" style="background:'+s.color+'"></span>'+s.label+' · <b>'+s.value+'</b></div>').join("");
 }

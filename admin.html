@@ -146,7 +146,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.14 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.15 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -215,6 +215,7 @@ document.querySelectorAll(".tab").forEach(t=>{
 // ======== STATISTIK ========
 async function ladeStatistik(){
   $("statInhalt").innerHTML='<div class="hinw">Lade …</div>';
+  try{
   const r = await api({ action:"adminStats", pass:PASS });
   if(!r.ok){ $("statInhalt").innerHTML = fehlerHtml("Fehler beim Laden.", r); return; }
   const nicht = r.neinPunkte + r.neinZeit;
@@ -254,7 +255,9 @@ async function ladeStatistik(){
           + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
   $("statInhalt").innerHTML = html;
+  }catch(e){ $("statInhalt").innerHTML = fehlerHtml("Anzeige-Fehler:", {error:String(e&&e.message||e)}); }
 }
+function kpi(z,l){ return '<div class="kpi"><div class="z">'+z+'</div><div class="l">'+l+'</div></div>'; }
 function resBadge(b){
   let txt='—', col='#9aa1a8';
   if(b==='Ja'){ txt='Bestanden'; col='var(--ok)'; }
@@ -285,10 +288,12 @@ function pieSVG(data){
 // ======== FRAGEN ========
 async function ladeFragen(){
   $("fragenInhalt").innerHTML='<div class="hinw">Lade …</div>';
+  try{
   const r = await api({ action:"adminFragen", pass:PASS });
   if(!r.ok){ $("fragenInhalt").innerHTML = fehlerHtml("Fehler beim Laden.", r); return; }
   FRAGEN = r.fragen;
   renderFragen();
+  }catch(e){ $("fragenInhalt").innerHTML = fehlerHtml("Anzeige-Fehler:", {error:String(e&&e.message||e)}); }
 }
 function renderFragen(){
   const box=$("fragenInhalt");
@@ -358,6 +363,7 @@ async function suchePdf(){
   const box=$("pdfInhalt");
   if(!q){ box.innerHTML=""; return; }
   box.innerHTML='<div class="hinw">Suche …</div>';
+  try{
   const r=await api({ action:"adminSuchePdf", pass:PASS, query:q });
   if(!r.ok){ box.innerHTML = fehlerHtml("Fehler bei der Suche.", r); return; }
   if(!r.treffer.length){ box.innerHTML='<div class="hinw">Keine Treffer.</div>'; return; }
@@ -367,6 +373,7 @@ async function suchePdf(){
     + (t.fileId ? '<button class="btn sek klein" id="dl'+i+'">PDF herunterladen</button>' : '<span class="hinw">kein PDF</span>')
     + '</div>').join("");
   r.treffer.forEach((t,i)=>{ if(t.fileId){ const b=$("dl"+i); if(b) b.addEventListener("click", ()=>ladePdf(t.fileId, b)); } });
+  }catch(e){ box.innerHTML = fehlerHtml("Anzeige-Fehler:", {error:String(e&&e.message||e)}); }
 }
 async function ladePdf(fileId, btn){
   const orig=btn.textContent; btn.disabled=true; btn.textContent="Lade …";

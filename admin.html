@@ -56,6 +56,10 @@
 
   /* Statistik */
   .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .block{background:var(--flaeche);border:1px solid var(--linie);border-radius:14px;padding:18px 20px;margin-top:16px;box-shadow:0 1px 2px rgba(16,25,33,.04)}
+  .block:first-child{margin-top:0}
+  .blocktitel{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;margin:0 0 14px}
+  .blocktitel::before{content:"";width:6px;height:20px;background:var(--rot);border-radius:2px;flex:0 0 auto}
   .kpi{flex:1;min-width:120px;border:1px solid var(--linie);border-radius:12px;padding:12px 14px}
   .kpi .z{font-size:26px;font-weight:800}
   .kpi .l{font-size:12px;color:var(--grau)}
@@ -123,20 +127,21 @@
     </div>
 
     <!-- STATISTIK -->
-    <div id="tabStat" class="karte">
-      <h2>Statistik</h2>
+    <div id="tabStat">
       <div id="statInhalt" class="hinw">Lade …</div>
     </div>
 
     <!-- FRAGEN -->
     <div id="tabFragen" class="karte" style="display:none">
       <h2>Fragen bearbeiten</h2>
+      <div style="margin-bottom:14px"><button class="btn klein" id="btnAddFrage">+ Frage hinzufügen</button></div>
+      <div id="addFrageBox"></div>
       <div id="fragenInhalt" class="hinw">Lade …</div>
     </div>
 
     <!-- PDF -->
     <div id="tabPdf" class="karte" style="display:none">
-      <h2>PDF suchen</h2>
+      <h2>Suche SoSi-Bestätigung</h2>
       <label for="suche">Kürzel oder Name</label>
       <div style="display:flex;gap:10px">
         <input id="suche" type="text" placeholder="z. B. LOL oder Loepfe" style="flex:1;min-width:0">
@@ -146,7 +151,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.15 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.16 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -225,13 +230,15 @@ async function ladeStatistik(){
     {label:"Zeitlimit", value:r.neinZeit, color:"var(--zeit)"}
   ];
   let html =
-    '<div class="kpis">'
+    '<div class="block"><div class="blocktitel">Übersicht</div>'
+    + '<div class="kpis">'
     + kpi(r.total,"Tests gesamt") + kpi(r.ja,"Bestanden")
     + kpi(r.neinPunkte,"Nicht bestanden (Punkte)") + kpi(r.neinZeit,"Zeitlimit")
     + '</div>'
-    + '<div class="statgrid">' + pieSVG(seg) + '<div class="legende">' + legende(seg) + '</div></div>';
+    + '<div class="statgrid">' + pieSVG(seg) + '<div class="legende">' + legende(seg) + '</div></div>'
+    + '</div>';
 
-  html += '<h2 style="margin-top:22px">Top 5 – häufigste Fehler</h2>';
+  html += '<div class="block"><div class="blocktitel">Häufigste Fehler</div>';
   if(!r.top5 || !r.top5.length){
     html += '<div class="hinw">Noch keine Fehlerdaten.</div>';
   } else {
@@ -240,7 +247,9 @@ async function ladeStatistik(){
             + '<span>'+(i+1)+'. '+escHtml(it.frage)+'</span></div>';
     });
   }
-  html += '<h2 style="margin-top:22px">Letzte 5 Prüfungen</h2>';
+  html += '</div>';
+
+  html += '<div class="block"><div class="blocktitel">Letzte Prüfungen</div>';
   if(!r.letzte5 || !r.letzte5.length){
     html += '<div class="hinw">Noch keine Prüfungen.</div>';
   } else {
@@ -254,6 +263,7 @@ async function ladeStatistik(){
           + '<th>Datum</th><th>Zeit</th><th>Kürzel</th><th>Zeit gebraucht</th><th>Resultat</th>'
           + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
+  html += '</div>';
   $("statInhalt").innerHTML = html;
   }catch(e){ $("statInhalt").innerHTML = fehlerHtml("Anzeige-Fehler:", {error:String(e&&e.message||e)}); }
 }
@@ -286,6 +296,37 @@ function pieSVG(data){
 }
 
 // ======== FRAGEN ========
+$("btnAddFrage").addEventListener("click", neueFrageForm);
+function neueFrageForm(){
+  let sel='';
+  for(let i=1;i<=4;i++) sel+='<option value="'+i+'"'+(i===1?' selected':'')+'>Antwort '+i+'</option>';
+  $("addFrageBox").innerHTML =
+    '<div class="qcard"><div class="qedit">'
+    + '<div class="qid" style="margin-bottom:10px">Neue Frage · ID wird automatisch vergeben</div>'
+    + '<label>Frage</label><textarea id="nef" rows="2"></textarea>'
+    + '<label>Antwort 1</label><input id="nea1" type="text">'
+    + '<label>Antwort 2</label><input id="nea2" type="text">'
+    + '<label>Antwort 3</label><input id="nea3" type="text">'
+    + '<label>Antwort 4 (optional)</label><input id="nea4" type="text">'
+    + '<label>Korrekte Antwort</label><select id="nek">'+sel+'</select>'
+    + '<div style="margin-top:12px;display:flex;gap:10px">'
+    + '<button class="btn klein" id="neSave">Hinzufügen</button>'
+    + '<button class="btn sek klein" id="neCancel">Abbrechen</button>'
+    + '</div><div class="fehler" id="neFehler"></div></div></div>';
+  $("neSave").addEventListener("click", speichereNeueFrage);
+  $("neCancel").addEventListener("click", ()=>{ $("addFrageBox").innerHTML=""; });
+}
+async function speichereNeueFrage(){
+  const frage=$("nef").value.trim();
+  const a1=$("nea1").value.trim(), a2=$("nea2").value.trim();
+  const f=$("neFehler");
+  if(!frage){ f.textContent="Frage darf nicht leer sein."; f.style.display="block"; return; }
+  if(!a1 || !a2){ f.textContent="Mindestens zwei Antworten nötig."; f.style.display="block"; return; }
+  const btn=$("neSave"); btn.disabled=true; btn.textContent="Speichere …";
+  const r=await api({ action:"adminAddFrage", pass:PASS, frage:frage, a1:a1, a2:a2, a3:$("nea3").value.trim(), a4:$("nea4").value.trim(), korrekt:$("nek").value });
+  if(r.ok){ $("addFrageBox").innerHTML=""; ladeFragen(); }
+  else { f.textContent="Hinzufügen fehlgeschlagen."+(r.detail?" ("+r.detail+")":""); f.style.display="block"; btn.disabled=false; btn.textContent="Hinzufügen"; }
+}
 async function ladeFragen(){
   $("fragenInhalt").innerHTML='<div class="hinw">Lade …</div>';
   try{

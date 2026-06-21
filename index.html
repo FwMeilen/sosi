@@ -169,7 +169,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.16 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv1.01 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -313,7 +313,7 @@ async function abschliessen(zeitAbgelaufen){
   $("siegel").className="siegel"; $("siegel").textContent="…";
   $("rtitel").textContent="Auswertung läuft …"; $("rtext").textContent=""; $("rmeta").innerHTML=""; $("rAktion").innerHTML="";
   try{
-    const r = await api({ action:"submit", token:S.token, kuerzel:$("kuerzel").value.trim(), antworten:S.antworten });
+    const r = await api({ action:"submit", token:S.token, kuerzel:$("kuerzel").value.trim(), antworten:S.antworten, zeitAbgelaufen:zeitAbgelaufen });
     resultat(r, zeitAbgelaufen);
   }catch(err){
     $("reiheNeu").style.display="";

@@ -146,7 +146,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv0.13 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv0.14 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -157,10 +157,20 @@ let FRAGEN = [];
 const $ = id => document.getElementById(id);
 
 async function api(payload){
-  const res = await fetch(EXEC_URL, { method:"POST", body: JSON.stringify(payload) });
-  return await res.json();
+  try{
+    const res = await fetch(EXEC_URL, { method:"POST", body: JSON.stringify(payload) });
+    const txt = await res.text();
+    try{ return JSON.parse(txt); }
+    catch(e){ return { ok:false, error:"KEIN_JSON", detail:txt.slice(0,200) }; }
+  }catch(e){
+    return { ok:false, error:"NETZWERK", detail:String(e && e.message || e) };
+  }
 }
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function fehlerHtml(prefix, r){
+  var d = r ? ((r.error||"") + (r.detail ? " — "+r.detail : "")) : "";
+  return '<div class="fehler" style="display:block">'+escHtml(prefix)+(d ? ' ('+escHtml(d)+')' : '')+'</div>';
+}
 
 // ======== LOGIN ========
 $("btnLogin").addEventListener("click", login);
@@ -206,7 +216,7 @@ document.querySelectorAll(".tab").forEach(t=>{
 async function ladeStatistik(){
   $("statInhalt").innerHTML='<div class="hinw">Lade …</div>';
   const r = await api({ action:"adminStats", pass:PASS });
-  if(!r.ok){ $("statInhalt").innerHTML='<div class="fehler" style="display:block">Fehler beim Laden.</div>'; return; }
+  if(!r.ok){ $("statInhalt").innerHTML = fehlerHtml("Fehler beim Laden.", r); return; }
   const nicht = r.neinPunkte + r.neinZeit;
   const seg = [
     {label:"Bestanden", value:r.ja, color:"var(--ok)"},
@@ -276,7 +286,7 @@ function pieSVG(data){
 async function ladeFragen(){
   $("fragenInhalt").innerHTML='<div class="hinw">Lade …</div>';
   const r = await api({ action:"adminFragen", pass:PASS });
-  if(!r.ok){ $("fragenInhalt").innerHTML='<div class="fehler" style="display:block">Fehler beim Laden.</div>'; return; }
+  if(!r.ok){ $("fragenInhalt").innerHTML = fehlerHtml("Fehler beim Laden.", r); return; }
   FRAGEN = r.fragen;
   renderFragen();
 }
@@ -349,7 +359,7 @@ async function suchePdf(){
   if(!q){ box.innerHTML=""; return; }
   box.innerHTML='<div class="hinw">Suche …</div>';
   const r=await api({ action:"adminSuchePdf", pass:PASS, query:q });
-  if(!r.ok){ box.innerHTML='<div class="fehler" style="display:block">Fehler bei der Suche.</div>'; return; }
+  if(!r.ok){ box.innerHTML = fehlerHtml("Fehler bei der Suche.", r); return; }
   if(!r.treffer.length){ box.innerHTML='<div class="hinw">Keine Treffer.</div>'; return; }
   box.innerHTML = r.treffer.map((t,i)=>
     '<div class="pdfrow"><div class="meta"><b>'+escHtml(t.vorname+' '+t.name)+'</b> ('+escHtml(t.kuerzel)+')<br>'

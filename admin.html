@@ -193,11 +193,11 @@
     </div>
   </section>
 
-  <div class="foot">CLv1.03 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv1.04 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
-const EXEC_URL = "https://script.google.com/macros/s/AKfycbz0mGY8B8I__4UV8HoMT6Jih-Aw_m_YIWvSyzpR8PP1avfnDZRtDTNU8ufKtPSrTg8sNg/exec";
+const EXEC_URL = "https://script.google.com/macros/s/AKfycbw2pswZ_F_HQ2HngWIXtOukAOGxBvEJPbo0YGOY3LNUN1jqmGf_HKHAWzIGqJ8dibBT0g/exec";
 
 let PASS = "";
 let FRAGEN = [];
@@ -475,7 +475,7 @@ async function ladePdf(fileId, btn){
   finally{ if(btn.textContent==="Lade …"){ btn.textContent=orig; btn.disabled=false; } }
 }
 // ======== EINSTELLUNGEN / BESTÄTIGUNGSMAIL ========
-let MAIL_DEFAULTS = null, MAIL_VERSION = "CLv1.03";
+let MAIL_DEFAULTS = null, MAIL_VERSION = "CLv1.04";
 
 function mailBeispiel(){
   const now=new Date(); const p2=n=>String(n).padStart(2,"0");

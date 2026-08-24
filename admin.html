@@ -152,38 +152,48 @@
 
     <!-- EINSTELLUNGEN -->
     <div id="tabMail" class="karte" style="display:none">
-      <h2>Bestätigungsmail</h2>
-      <p class="hinw" style="margin-top:-4px">Gilt für die automatische E-Mail bei <b>bestandener</b> Prüfung. Die persönliche Mail des Kandidaten (aus dem Kürzel-Sheet) wird immer automatisch zusätzlich versendet. Das PDF hängt immer an.</p>
+      <h2>Einstellungen</h2>
 
-      <label for="mailEmpf" style="margin-top:14px">Empfänger (fix) — mehrere mit Komma trennen</label>
-      <input id="mailEmpf" type="text" placeholder="z. B. feuerwehr@sennhof.net, kdt@example.ch">
+      <label for="gueltigJahre" style="margin-top:6px">Gültigkeitsdauer der Freigabe (Jahre)</label>
+      <input id="gueltigJahre" type="number" min="1" max="10" step="1" style="max-width:120px">
+      <div class="hinw" style="margin-top:6px">Gilt für <b>neu</b> bestandene Prüfungen. Bereits bestandene Prüfungen behalten ihre bisherige Gültigkeit.</div>
 
-      <label for="mailBetreff" style="margin-top:14px">Betreff</label>
-      <input id="mailBetreff" type="text">
+      <details class="ausklapp" style="margin-top:18px">
+        <summary style="cursor:pointer;font-weight:700;font-size:1.05rem;padding:4px 0">Bestätigungsmail</summary>
+        <div style="margin-top:12px">
+          <p class="hinw" style="margin-top:0">Gilt für die automatische E-Mail bei <b>bestandener</b> Prüfung. Die persönliche Mail des Kandidaten (aus dem Kürzel-Sheet) wird immer automatisch zusätzlich versendet. Das PDF hängt immer an.</p>
 
-      <label for="mailText" style="margin-top:14px">Mailtext</label>
-      <textarea id="mailText" rows="12"></textarea>
+          <label for="mailEmpf" style="margin-top:14px">Empfänger (fix) — mehrere mit Komma trennen</label>
+          <input id="mailEmpf" type="text" placeholder="z. B. feuerwehr@sennhof.net, kdt@example.ch">
 
-      <div class="hinw" style="margin-top:8px">
-        Platzhalter: <code>{vorname}</code> <code>{name}</code> <code>{kuerzel}</code> <code>{datum}</code> <code>{gueltigBis}</code> <code>{punkte}</code> <code>{dauer}</code> <code>{version}</code>. Zeilenumbrüche werden automatisch übernommen; HTML ist nicht nötig. Leerst du ein Feld, greift wieder der Standard.
-      </div>
+          <label for="mailBetreff" style="margin-top:14px">Betreff</label>
+          <input id="mailBetreff" type="text">
+
+          <label for="mailText" style="margin-top:14px">Mailtext</label>
+          <textarea id="mailText" rows="12"></textarea>
+
+          <div class="hinw" style="margin-top:8px">
+            Platzhalter: <code>{vorname}</code> <code>{name}</code> <code>{kuerzel}</code> <code>{datum}</code> <code>{gueltigBis}</code> <code>{punkte}</code> <code>{dauer}</code> <code>{version}</code>. Zeilenumbrüche werden automatisch übernommen; HTML ist nicht nötig. Leerst du ein Feld, greift wieder der Standard.
+          </div>
+
+          <div class="block" style="margin-top:18px">
+            <div class="blocktitel">Vorschau (Beispieldaten)</div>
+            <div class="hinw" style="margin-bottom:8px">An: <span id="pvEmpf"></span></div>
+            <div style="font-weight:700;margin-bottom:10px">Betreff: <span id="pvBetreff" style="font-weight:600"></span></div>
+            <div id="pvBody" style="background:var(--hell);border:1px solid var(--linie);border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.5"></div>
+          </div>
+        </div>
+      </details>
 
       <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn" id="btnMailSpeichern">Speichern</button>
-        <button class="btn sek klein" id="btnMailReset">Auf Standard zurücksetzen</button>
+        <button class="btn sek klein" id="btnMailReset">Mailtext auf Standard</button>
         <span id="mailStatus" class="hinw"></span>
-      </div>
-
-      <div class="block" style="margin-top:18px">
-        <div class="blocktitel">Vorschau (Beispieldaten)</div>
-        <div class="hinw" style="margin-bottom:8px">An: <span id="pvEmpf"></span></div>
-        <div style="font-weight:700;margin-bottom:10px">Betreff: <span id="pvBetreff" style="font-weight:600"></span></div>
-        <div id="pvBody" style="background:var(--hell);border:1px solid var(--linie);border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.5"></div>
       </div>
     </div>
   </section>
 
-  <div class="foot">CLv1.02 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv1.03 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -465,7 +475,7 @@ async function ladePdf(fileId, btn){
   finally{ if(btn.textContent==="Lade …"){ btn.textContent=orig; btn.disabled=false; } }
 }
 // ======== EINSTELLUNGEN / BESTÄTIGUNGSMAIL ========
-let MAIL_DEFAULTS = null, MAIL_VERSION = "CLv1.02";
+let MAIL_DEFAULTS = null, MAIL_VERSION = "CLv1.03";
 
 function mailBeispiel(){
   const now=new Date(); const p2=n=>String(n).padStart(2,"0");
@@ -496,16 +506,19 @@ async function ladeMail(){
   if(!r.ok){ st.textContent=""; $("pvBody").innerHTML=fehlerHtml("Fehler beim Laden.", r); return; }
   MAIL_DEFAULTS=r.defaults||null; if(r.version) MAIL_VERSION=r.version;
   $("mailEmpf").value=r.empfaenger||""; $("mailBetreff").value=r.betreff||""; $("mailText").value=r.text||"";
+  $("gueltigJahre").value = (r.gueltigJahre!=null?r.gueltigJahre:((r.defaults&&r.defaults.gueltigJahre)||2));
   st.textContent=""; mailVorschau();
 }
 async function speichereMail(){
   const st=$("mailStatus"); const btn=$("btnMailSpeichern");
   btn.disabled=true; st.style.color=""; st.textContent="Speichere …";
   const r=await api({ action:"adminSetMail", pass:PASS,
-    empfaenger:$("mailEmpf").value, betreff:$("mailBetreff").value, text:$("mailText").value });
+    empfaenger:$("mailEmpf").value, betreff:$("mailBetreff").value, text:$("mailText").value,
+    gueltigJahre:$("gueltigJahre").value });
   btn.disabled=false;
   if(r.ok){ st.style.color="var(--ok)"; st.textContent="Gespeichert."; ladeMail(); }
   else if(r.error==="EMAIL_UNGUELTIG"){ st.style.color="var(--rot)"; st.textContent="Ungültige Adresse(n): "+((r.ungueltig||[]).join(", ")); }
+  else if(r.error==="JAHRE_UNGUELTIG"){ st.style.color="var(--rot)"; st.textContent="Gültigkeitsdauer muss zwischen 1 und 10 Jahren liegen."; }
   else if(r.error==="AUTH"){ st.style.color="var(--rot)"; st.textContent="Nicht angemeldet."; }
   else { st.style.color="var(--rot)"; st.textContent="Fehler beim Speichern."+(r.detail?" ("+r.detail+")":""); }
 }

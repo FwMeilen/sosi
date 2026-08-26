@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="4;url=https://mwd.feuerwehrmeilen.ch">
+<title>Umgezogen – Admin MWD</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--red:#CC0000;--black:#1a1a1a;--gray:#666;--gray-mid:#e0e0e0;--bg:#fff;--bg3:#e8e8e8;--text2:#555;--text3:#888;}
+body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg3);color:var(--black);min-height:100vh;font-size:14px;}
+.site-header{background:var(--black);}
+.site-header-inner{max-width:640px;margin:0 auto;padding:0 1rem;display:flex;align-items:center;height:54px;gap:12px;}
+.logo-text{color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1.2;}
+.logo-text span{display:block;font-size:10px;font-weight:400;color:#999;text-transform:none;letter-spacing:0;}
+.red-stripe{height:4px;background:var(--red);}
+.page{max-width:640px;margin:0 auto;padding:2.5rem 1rem;}
+.card{background:var(--bg);border:1px solid var(--gray-mid);border-top:3px solid var(--red);padding:2rem 1.5rem;text-align:center;}
+h1{font-size:20px;margin-bottom:.75rem;}
+p{color:var(--text2);line-height:1.7;margin-bottom:1.25rem;}
+.btn{height:46px;padding:0 24px;border:2px solid var(--red);background:var(--red);color:#fff;font-size:13px;font-weight:700;
+     text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+     text-decoration:none;justify-content:center;}
+.btn:hover{background:#990000;border-color:#990000;}
+.hinw{font-size:12px;color:var(--text3);margin-top:1.25rem;}
+.site-footer{background:var(--black);color:#888;font-size:11px;text-align:center;padding:1rem;position:fixed;bottom:0;left:0;right:0;}
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div class="site-header-inner">
+    <img src="https://www.feuerwehr-meilen.ch/fileadmin/Public/Website/Templates/Images/Logo-FeuerwehrMeilen.png" alt="Stützpunktfeuerwehr Meilen" style="height:38px;width:auto;object-fit:contain;">
+    <div class="logo-text">Stützpunktfeuerwehr Meilen<span>Admin</span></div>
+  </div>
+</div>
+<div class="red-stripe"></div>
+
+<div class="page">
+  <div class="card">
+    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 1rem;display:block">
+      <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+    </svg>
+    <h1>Das Admin-Panel ist umgezogen</h1>
+    <p>
+      Fahrtraining, SoSi-Prüfung und Fahrzeugreservationen werden neu
+      gemeinsam unter <b>mwd.feuerwehrmeilen.ch</b> verwaltet – mit einem Login für alles.
+    </p>
+    <a class="btn" href="https://mwd.feuerwehrmeilen.ch">Zum neuen Admin-Panel</a>
+    <div class="hinw">Du wirst in wenigen Sekunden automatisch weitergeleitet.</div>
+  </div>
+</div>
+
+<div class="site-footer">© Stützpunktfeuerwehr Meilen / LOL</div>
+
+<script>
+setTimeout(function(){ window.location.replace("https://mwd.feuerwehrmeilen.ch"); }, 4000);
+</script>
+</body>
+</html>

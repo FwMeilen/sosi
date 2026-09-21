@@ -169,19 +169,25 @@
     </div>
   </section>
 
-  <div class="foot">CLv1.06 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv1.07 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
-/* ── Netzwerk: geduldige Wiederholung (gemeinsam für alle MWD-Seiten) ──
- * Google liefert gelegentlich eine Fehlerseite statt Daten, vor allem beim
- * Kaltstart. fwAufruf() wiederholt dann mit wachsenden Pausen (bis ca. 15 s),
- * zeigt «Server startet …» und fragt erst danach, ob erneut versucht werden soll.
- * Jeder Aufruf erhält eine Kennung, damit eine Wiederholung auf dem Server
- * nichts doppelt schreibt. Wiederholungen werden fürs Aussetzer-Protokoll gemeldet.
+/* ── Netzwerk-Baustein für alle MWD-Seiten ──
+ * Google antwortet manchmal sofort, manchmal hängt eine Anfrage 30 Sekunden
+ * oder liefert eine Fehlerseite. Deshalb:
+ *  - Kommt nach 4 s keine Antwort, geht dieselbe Anfrage ein zweites Mal los
+ *    (danach nach 9, 16, 25 s). Die erste gültige Antwort gewinnt.
+ *  - Scheitert eine Anfrage (Fehlerseite), startet sofort die nächste.
+ *  - Nach 3 s erscheint «Server braucht gerade länger …».
+ *  - Nach 45 s ohne Erfolg: «Server nicht erreichbar» mit «Erneut versuchen».
+ * Alle Anfragen tragen dieselbe Kennung – der Server führt Schreibvorgänge
+ * dadurch nur einmal aus. Mehrfachanfragen werden fürs Aussetzer-Protokoll gemeldet.
  */
 (function(){
-  const PAUSEN=[0,1000,2000,4000,8000];
+  const NACHFRAGEN=[0,4000,9000,16000,25000];  // Startzeitpunkte der Anfragen
+  const HOECHSTENS=45000;                         // danach aufgeben und fragen
+  const HINWEIS_NACH=3000;
   const MELDE_URL="https://script.google.com/macros/s/AKfycbwvTL3yecdyTvSV5ZPgGslm5K-3UFjW9zc4A2qn_zUk50CcSIpXEaBE1hMiaU3GnNEQ/exec";
   let aktiv=0, entscheid=null;
 
@@ -200,7 +206,7 @@
   function zeigeWarten(){
     if(entscheid) return;
     const b=banner(); b.style.background="#1a1a1a";
-    b.textContent="⏳ Server startet, einen Moment …";
+    b.textContent="⏳ Server braucht gerade länger, einen Moment …";
     b.style.display="flex";
   }
   function verstecke(){
@@ -230,6 +236,54 @@
         body:JSON.stringify(Object.assign({type:"aussetzer_melden"},d))}).catch(()=>{});
     }catch(e){}
   }
+  function lesen(text){
+    const t=String(text||"").trim();
+    if(t==="ok") return {ok:true};   // ältere Server-Versionen
+    try{ return JSON.parse(t); }catch(e){ return null; }
+  }
+
+  /** Eine Runde: Anfragen gestaffelt starten, erste gültige Antwort gewinnt */
+  function runde(url,body,opts,aufruf){
+    return new Promise(resolve=>{
+      const start=Date.now();
+      let gestartet=0, offen=0, fertig=false, zeigt=false;
+      const abbrecher=[], uhren=[];
+      const ende=(ok,daten)=>{
+        if(fertig) return;
+        fertig=true;
+        uhren.forEach(clearTimeout);
+        abbrecher.forEach(a=>{ try{ a.abort(); }catch(e){} });
+        if(zeigt){ aktiv--; verstecke(); }
+        if(gestartet>1||!ok) melden({seite:opts.seite||location.hostname,aufruf,
+          versuche:gestartet,dauerMs:Date.now()-start,erfolg:ok});
+        resolve({ok,daten});
+      };
+      const starte=()=>{
+        if(fertig) return;
+        if(gestartet>=NACHFRAGEN.length){ if(offen===0) ende(false); return; }
+        gestartet++; offen++;
+        const a=new AbortController(); abbrecher.push(a);
+        fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body,signal:a.signal})
+          .then(r=>r.text())
+          .then(text=>{
+            offen--;
+            if(fertig) return;
+            const daten=lesen(text);
+            if(daten && daten.error!=="BESCHAEFTIGT") return ende(true,daten);
+            if(!daten) console.warn("Keine gültige Antwort:",String(text).slice(0,160));
+            if(offen===0) uhren.push(setTimeout(starte,700));
+          })
+          .catch(e=>{
+            offen--;
+            if(fertig) return;
+            if(offen===0) uhren.push(setTimeout(starte,700));
+          });
+      };
+      NACHFRAGEN.forEach(t=>uhren.push(setTimeout(starte,t)));
+      if(!opts.still) uhren.push(setTimeout(()=>{ if(!fertig){ zeigt=true; aktiv++; zeigeWarten(); } },HINWEIS_NACH));
+      uhren.push(setTimeout(()=>ende(false),HOECHSTENS));
+    });
+  }
 
   /**
    * @param url     Adresse des Apps Script
@@ -242,30 +296,12 @@
     if(!payload.anfrageId) payload.anfrageId=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10);
     const body=JSON.stringify(payload);
     const aufruf=payload.type||payload.action||"";
-    const start=Date.now();
-    let versuche=0, zeigt=false;
     while(true){
-      for(let i=0;i<PAUSEN.length;i++){
-        if(PAUSEN[i]) await new Promise(r=>setTimeout(r,PAUSEN[i]));
-        versuche++;
-        try{
-          const res=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body});
-          const text=await res.text();
-          try{
-            const daten=JSON.parse(text);
-            if(zeigt){ aktiv--; verstecke(); }
-            if(versuche>1) melden({seite:opts.seite||location.hostname,aufruf,versuche,dauerMs:Date.now()-start,erfolg:true});
-            return daten;
-          }catch(e){ console.warn("Keine gültige Antwort (Versuch "+versuche+"):",text.slice(0,200)); }
-        }catch(e){ console.warn("Netzwerkfehler (Versuch "+versuche+"):",e&&e.message); }
-        if(!zeigt&&!opts.still){ zeigt=true; aktiv++; zeigeWarten(); }
-      }
-      if(zeigt){ aktiv--; zeigt=false; }
-      melden({seite:opts.seite||location.hostname,aufruf,versuche,dauerMs:Date.now()-start,erfolg:false});
-      if(opts.still){ verstecke(); throw new Error("Server nicht erreichbar."); }
+      const r=await runde(url,body,opts,aufruf);
+      if(r.ok) return r.daten;
+      if(opts.still) throw new Error("Server nicht erreichbar.");
       const nochmals=await frageNochmals();
       if(!nochmals){ verstecke(); throw new Error("Server nicht erreichbar. Bitte später erneut versuchen."); }
-      zeigt=true; aktiv++; zeigeWarten();
     }
   };
 })();

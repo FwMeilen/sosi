@@ -169,31 +169,29 @@
     </div>
   </section>
 
-  <div class="foot">CLv1.10 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv1.11 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
-/* ── Netzwerk-Baustein für alle MWD-Seiten (Stand CLv1.69) ──
+/* ── Netzwerk-Baustein für alle MWD-Seiten (Stand CLv1.72) ──
  * Google antwortet manchmal sofort, manchmal hängt eine Anfrage oder liefert eine
- * Fehlerseite. Seit CLv1.69:
- *  - Aufrufe laufen über den MWD-Worker (Cloudflare). Er fragt bei Googles Fehlern
- *    selbst sofort nach und hält öffentliche Lesedaten zwischengespeichert.
- *    Antwortet der Worker nicht (oder ist er noch die alte Version W2), geht der
- *    Aufruf direkt an Google.
- *  - Höchstens 2 Anfragen gleichzeitig (vorher bis 5): die zweite nach 15 s,
- *    und zwar direkt an Google. Nach einer Fehlerantwort startet sofort die nächste,
- *    insgesamt höchstens 4.
+ * Fehlerseite. Seit CLv1.72:
+ *  - Aufrufe gehen wieder direkt an Google. Der Umweg über den Cloudflare-Worker
+ *    (CLv1.69–1.71) war gemessen deutlich langsamer (10–47 s statt 1–2 s);
+ *    der Worker dient nur noch den Kalender-Abos.
+ *  - Höchstens 2 Anfragen gleichzeitig: die zweite nach 8 s. Nach einer
+ *    Fehlerantwort startet sofort die nächste, insgesamt höchstens 4.
  *  - «Server braucht gerade länger …» erst nach 8 s (vorher 3 s).
  *  - Nach 50 s ohne Erfolg: «Server nicht erreichbar» mit «Erneut versuchen».
  * Alle Anfragen tragen dieselbe Kennung – der Server führt Schreibvorgänge nur
  * einmal aus. Mehrfachanfragen werden fürs Aussetzer-Protokoll gemeldet.
  */
 (function(){
-  const NACHFRAGEN=[0,15000];     // geplante Startzeitpunkte
+  const NACHFRAGEN=[0,8000];      // geplante Startzeitpunkte
   const MAX_VERSUCHE=4;           // inkl. Neustarts nach Fehlerantworten
   const HOECHSTENS=50000;         // danach aufgeben und fragen
   const HINWEIS_NACH=8000;
-  const WORKER="https://cal.stuetzpunktfeuerwehrmeilen.workers.dev/api";
+  const WORKER="";   // Worker-Umweg ausgeschaltet (siehe oben)
   const MELDE_URL="https://script.google.com/macros/s/AKfycbwvTL3yecdyTvSV5ZPgGslm5K-3UFjW9zc4A2qn_zUk50CcSIpXEaBE1hMiaU3GnNEQ/exec";
   let aktiv=0, entscheid=null, workerOk=null;   // null = unbekannt, false = nicht nutzen
 
@@ -248,7 +246,7 @@
     try{ return JSON.parse(t); }catch(e){ return null; }
   }
 
-  /** Eine Runde: erste Anfrage (Worker), nach 15 s eine zweite (direkt), erste gültige Antwort gewinnt */
+  /** Eine Runde: erste Anfrage sofort, nach 8 s eine zweite, erste gültige Antwort gewinnt */
   function runde(url,body,opts,aufruf){
     return new Promise(resolve=>{
       const start=Date.now();
@@ -270,7 +268,7 @@
         if(gestartet>=MAX_VERSUCHE){ if(offen===0) ende(false); return; }
         gestartet++; offen++;
         // 1., 3. Versuch über den Worker, 2., 4. direkt an Google (falls der Worker selbst klemmt)
-        const ueberWorker=workerOk!==false && gestartet%2===1 && url.indexOf("script.google.com")>=0;
+        const ueberWorker=!!WORKER && workerOk!==false && gestartet%2===1 && url.indexOf("script.google.com")>=0;
         const ziel=ueberWorker?WORKER:url;
         const a=new AbortController(); abbrecher.push(a);
         fetch(ziel,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body,signal:a.signal})
@@ -338,7 +336,7 @@ function zeige(sc){ ["scLogin","scGueltig","scQuiz","scResultat"].forEach(x=>$(x
 
 async function api(payload){
   // Wiederholung bei Serveraussetzern und Schutz gegen doppelte Auswertung übernimmt fwAufruf
-  // Seit CLv1.10 nur noch das gemeinsame Script (das alte SoSi-Script ist stillgelegt)
+  // Seit CLv1.11 nur noch das gemeinsame Script (das alte SoSi-Script ist stillgelegt)
   return fwAufruf(EXEC_URL, payload, {seite:"SoSi-Prüfung"});
 }
 

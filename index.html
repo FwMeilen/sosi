@@ -169,7 +169,7 @@
     </div>
   </section>
 
-  <div class="foot">CLv1.13 · © Stützpunktfeuerwehr Meilen / LOL</div>
+  <div class="foot">CLv1.14 · © Stützpunktfeuerwehr Meilen / LOL</div>
 </div>
 
 <script>
@@ -381,7 +381,7 @@ function zeige(sc){ ["scLogin","scGueltig","scQuiz","scResultat"].forEach(x=>$(x
 
 async function api(payload){
   // Wiederholung bei Serveraussetzern und Schutz gegen doppelte Auswertung übernimmt fwAufruf
-  // Seit CLv1.13 nur noch das gemeinsame Script (das alte SoSi-Script ist stillgelegt)
+  // Seit CLv1.14 nur noch das gemeinsame Script (das alte SoSi-Script ist stillgelegt)
   return fwAufruf(EXEC_URL, payload, {seite:"SoSi-Prüfung"});
 }
 
@@ -572,6 +572,12 @@ function reviewListe(akt, review){
 }
 
 function pdfAktion(akt, r){
+  // Das Zertifikat wird im Hintergrund erzeugt und per Mail verschickt (seit W1.04)
+  if(r.pdfFolgt){
+    akt.innerHTML='<div class="hinw">Das Zertifikat wird erstellt und in den nächsten Minuten per Mail verschickt'
+      +(r.empfaenger?` (an ${r.empfaenger} Empfänger)`:"")+'. Du kannst diese Seite schliessen.</div>';
+    return;
+  }
   if(!r.pdfBase64) return;
   const blob = b64ToBlob(r.pdfBase64, "application/pdf");
   const url = URL.createObjectURL(blob);
